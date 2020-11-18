@@ -46,7 +46,7 @@ public class MainStage {
 		
 	}
 	
-	public void setStage(Stage stage) {					//function for adding elements to stage
+	public void setStage(Stage stage) {							//function for adding elements to stage
 		this.stage = stage;
 		this.addMouseEventHandler();
 		
@@ -333,48 +333,53 @@ public class MainStage {
 				File file = fileChooser.showOpenDialog(stage);
 				
 				try {
-					BufferedReader br = new BufferedReader(new FileReader(file));
-					String str;
-					
-					while((str=br.readLine())!=null) {										//read each line of file
-						System.out.println("line:"+str);
+					if(file != null) {		//if file not empty
+						BufferedReader br = new BufferedReader(new FileReader(file));
+						String str;
 						
-						if(str.contains("\09") || str.contains("\t")) {
-							str = str.replaceAll("[\09\t]+", "");
-						}
-						
-						if(!str.contains(" ")) {											//if string cant be split
-							lexemeChecker(str);
-						}else {
-							String[] words = str.split(" ");									//split each word by space delimiter  //TOKENIZE
-							String s = new String();
-						
-							s = words[0];
-							s = s.replaceAll("[^a-zA-Z0-9\"]", ""); 							//clean
+						while((str=br.readLine())!=null) {										//read each line of file
+							System.out.println("line:"+str);
 							
-							for(int i=1;i<(words.length);i++) {
-								System.out.println(words.length + " word:" + words[i]);
-								s = lexemeChecker(s);					//check token
-								
-								if(words.length != 1) {					//add a word to the string to compare
-									if(s == "") {
-										s = words[i];
-									}else {
-										s = s + " " + words[i];
-									}
-								}
-								if(i == (words.length-1)) s = lexemeChecker(s);					//check last word
-								System.out.println("s:"+s);		
+							if(str.contains("\09") || str.contains("\t")) {
+								str = str.replaceAll("[\09\t]+", "");
 							}
-							System.out.println();
+							
+							if(!str.contains(" ")) {											//if string can't be split (one word line)
+								lexemeChecker(str);
+							}else {
+								String[] words = str.split(" ");									//split each word by space delimiter  //TOKENIZE
+								String s = new String();
+							
+								s = words[0];
+								s = s.replaceAll("[^a-zA-Z0-9\"]", ""); 							//clean
+								
+								for(int i=1;i<(words.length);i++) {
+									System.out.println(words.length + " word:" + words[i]);
+									s = lexemeChecker(s);					//check token if lexeme
+									
+									if(words.length != 1) {					//add next word to the string to compare
+										if(s == "") {
+											s = words[i];
+										}else {
+											s = s + " " + words[i];
+										}
+									}
+									if(i == (words.length-1)) s = lexemeChecker(s);					//check last word
+									System.out.println("s:"+s);		
+								}
+								System.out.println();
+							}
 						}
-						
+						//printing of lexemes table
+						System.out.println("\n============LEXEMES============ n:" + lexemes.size());
+						for(int i=0;i<lexemes.size();i++) {
+							System.out.println(lexemes.get(i) + " :: " + classification.get(i));
+						}
+					}else {
+						//print error if no file is selected
+						System.out.println("[!] No file selected.");
 					}
-					//printing of lexemes table
-					System.out.println("\n============LEXEMES============ n:" + lexemes.size());
-					for(int i=0;i<lexemes.size();i++) {
-						System.out.println(lexemes.get(i) + " :: " + classification.get(i));
-					}
+					
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
