@@ -421,12 +421,15 @@ public class MainStage {
 						
 						code.setText(program);
 						//printing of lexemes lexemeTable
+						ObservableList<Lexeme> lexTable = FXCollections.observableArrayList();
+
 						System.out.println("\n============LEXEMES============ n:" + lexemes.size());
 						for(int i=0;i<lexemes.size();i++) {
 							map.put(lexemes.get(i), classification.get(i));
+							lexTable.add(new Lexeme(lexemes.get(i), classification.get(i)));
 							System.out.println(lexemes.get(i) + " :: " + classification.get(i));
 						}
-						lexemeTable.setItems(getValues(map));				
+						lexemeTable.setItems(lexTable);				
 					}else {
 						//print error if no file is selected
 						System.out.println("[!] No file selected.");
@@ -437,14 +440,5 @@ public class MainStage {
 				}
 			}
 		});
-	}
-	
-	public ObservableList<Lexeme> getValues(Map<String,String> map){
-		ObservableList<Lexeme> lexemeTable = FXCollections.observableArrayList();
-		for (Map.Entry<String,String> lex : map.entrySet()) {
-			lexemeTable.add(new Lexeme(lex.getKey(), lex.getValue()));
-		}
-		// Return ObservableList with Lexeme Class instances
-		return lexemeTable;
 	}
 }
