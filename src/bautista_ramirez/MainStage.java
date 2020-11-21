@@ -5,27 +5,36 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TreeMap;
+
 import bautista_ramirez.MainStage;
 import javafx.event.EventHandler;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
+import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 
 public class MainStage {
 	private Scene scene;
 	private Stage stage;
 	private Group root;
 	private Canvas canvas;
-	private TableView table;
 	private Button file_btn;
 	private FileChooser fileChooser;
 	
@@ -34,6 +43,11 @@ public class MainStage {
 	
 	public final static int WINDOW_WIDTH = 1080;
 	public final static int WINDOW_HEIGHT = 720;
+	public TableView<Lexeme> lexemeTable = new TableView();
+	public TableView<Lexeme> symbolTable = new TableView();
+	private TextArea code;
+	private TextArea output;
+		
 	
 	public MainStage() {								//constructor for MainStage
 		this.root = new Group();
@@ -43,7 +57,8 @@ public class MainStage {
 		this.classification = new ArrayList<String>();	
 		this.file_btn = new Button();
 		this.fileChooser = new FileChooser();
-		
+		this.code = new TextArea();
+		this.output = new TextArea();
 	}
 	
 	public void setStage(Stage stage) {							//function for adding elements to stage
@@ -52,11 +67,42 @@ public class MainStage {
 		
 		this.file_btn.setText("  Add file...  ");
         this.file_btn.setFont(new Font(12));
-		this.file_btn.setLayoutX(MainStage.WINDOW_WIDTH*0.5);
-		this.file_btn.setLayoutY(MainStage.WINDOW_WIDTH*0.1);
+		this.file_btn.setLayoutX(MainStage.WINDOW_WIDTH*0.01);
+		this.file_btn.setLayoutY(MainStage.WINDOW_WIDTH*0.01);
+		
+		lexemeTable.setLayoutX(MainStage.WINDOW_WIDTH*0.4);
+		lexemeTable.setLayoutY(MainStage.WINDOW_HEIGHT*0.05);
+		lexemeTable.setMinWidth(WINDOW_WIDTH*0.275);
+		lexemeTable.setMaxHeight(WINDOW_HEIGHT*0.4);
+		
+		symbolTable.setLayoutX(MainStage.WINDOW_WIDTH*0.7);
+		symbolTable.setLayoutY(MainStage.WINDOW_HEIGHT*0.05);
+		symbolTable.setMinWidth(WINDOW_WIDTH*0.275);
+		symbolTable.setMaxHeight(WINDOW_HEIGHT*0.4);
+		
+		TableColumn lexCol = new TableColumn("Lexeme");
+		TableColumn classCol = new TableColumn("Classification");
+		lexCol.setCellValueFactory(new PropertyValueFactory<>("lexeme"));
+		classCol.setCellValueFactory(new PropertyValueFactory<>("classification"));
+		lexemeTable.getColumns().addAll(lexCol,classCol);
+		
+		TableColumn idCol = new TableColumn("Identifier");
+		TableColumn valCol = new TableColumn("Value");
+		idCol.setCellValueFactory(new PropertyValueFactory<>("identifier"));
+		valCol.setCellValueFactory(new PropertyValueFactory<>("value"));
+		symbolTable.getColumns().addAll(idCol,valCol);
+		
+		this.code.setLayoutX(MainStage.WINDOW_WIDTH*0.01);
+		this.code.setLayoutY(MainStage.WINDOW_HEIGHT*0.05);
+		this.code.setMaxWidth(WINDOW_WIDTH*0.36);
+		this.code.setMinHeight(MainStage.WINDOW_HEIGHT*0.4);
 
-		this.root.getChildren().add(canvas);
-		this.root.getChildren().add(file_btn);
+		this.output.setLayoutX(MainStage.WINDOW_WIDTH*0.01);
+		this.output.setLayoutY(MainStage.WINDOW_HEIGHT*0.525);
+		this.output.setMinWidth(WINDOW_WIDTH*0.975);
+		this.output.setMinHeight(MainStage.WINDOW_HEIGHT*0.45);
+		
+		this.root.getChildren().addAll(canvas,file_btn,code,lexemeTable,symbolTable,output);
 		this.stage.setTitle("LOLCODE INTERPRETER");
 		this.stage.setScene(this.scene);
 		this.stage.show();
@@ -334,14 +380,16 @@ public class MainStage {
 				
 				try {
 					if(file != null) {		//if file not empty
+						LinkedHashMap<String,String> map = new LinkedHashMap();
 						BufferedReader br = new BufferedReader(new FileReader(file));
-						String str;
+						String program = "", str;
 						
 						while((str=br.readLine())!=null) {										//read each line of file
-							System.out.println("line:"+str);
+							program = program + str + "\n";
+							System.out.println("line: "+"\""+str+"\"");
 							
-							if(str.contains("\09") || str.contains("\t")) {
-								str = str.replaceAll("[\09\t]+", "");
+							if(str.contains("\\x{09}") || str.contains("\t")) {
+								str = str.replaceAll("[\\x{09}\t]+", "");
 							}
 							
 							if(!str.contains(" ")) {											//if string can't be split (one word line)
@@ -354,7 +402,7 @@ public class MainStage {
 								s = s.replaceAll("[^a-zA-Z0-9\"]", ""); 							//clean
 								
 								for(int i=1;i<(words.length);i++) {
-									System.out.println(words.length + " word:" + words[i]);
+									System.out.println(words.length + " word: " + "\"" + words[i] + "\"");
 									s = lexemeChecker(s);					//check token if lexeme
 									
 									if(words.length != 1) {					//add next word to the string to compare
@@ -365,16 +413,20 @@ public class MainStage {
 										}
 									}
 									if(i == (words.length-1)) s = lexemeChecker(s);					//check last word
-									System.out.println("s:"+s);		
+									System.out.println("s: "+"\""+s+"\"");		
 								}
 								System.out.println();
 							}
 						}
-						//printing of lexemes table
+						
+						code.setText(program);
+						//printing of lexemes lexemeTable
 						System.out.println("\n============LEXEMES============ n:" + lexemes.size());
 						for(int i=0;i<lexemes.size();i++) {
+							map.put(lexemes.get(i), classification.get(i));
 							System.out.println(lexemes.get(i) + " :: " + classification.get(i));
 						}
+						lexemeTable.setItems(getValues(map));				
 					}else {
 						//print error if no file is selected
 						System.out.println("[!] No file selected.");
@@ -383,8 +435,16 @@ public class MainStage {
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
-				
 			}
 		});
+	}
+	
+	public ObservableList<Lexeme> getValues(Map<String,String> map){
+		ObservableList<Lexeme> lexemeTable = FXCollections.observableArrayList();
+		for (Map.Entry<String,String> lex : map.entrySet()) {
+			lexemeTable.add(new Lexeme(lex.getKey(), lex.getValue()));
+		}
+		// Return ObservableList with Lexeme Class instances
+		return lexemeTable;
 	}
 }
