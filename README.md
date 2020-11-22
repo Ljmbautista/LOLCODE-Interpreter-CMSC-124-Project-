@@ -34,6 +34,7 @@ REQUIREMENT/TO-DO
 LEXEMES
 
 []double quotes implementation
+
 [X]basic lexemes
 
 SYMBOL TABLE
@@ -42,14 +43,23 @@ SYMBOL TABLE
 
 BONUS
 
-[X]Soft-line/command breaks (,) 			
+[X]Soft-line/command breaks (,) 	
+
 	-nareread na ng maayos sa lexeme table
 	-not sure pano to gagawin sa execute part
 []functions 								
+
 []Explicit type casting (MAEK, IS NOW A) 	
+
 []Loop-nesting								
+
 []Loops 									
+
 []Special characters in strings				
+
 []If-then statement nesting 				
+
 []Else-if clauses							
+
 []VISIBLE statement with a !				
+
