@@ -83,13 +83,17 @@ public class MainStage {
 		TableColumn lexCol = new TableColumn("Lexeme");
 		TableColumn classCol = new TableColumn("Classification");
 		lexCol.setCellValueFactory(new PropertyValueFactory<>("lexeme"));
+		lexCol.setMinWidth(150);
 		classCol.setCellValueFactory(new PropertyValueFactory<>("classification"));
+		classCol.setMinWidth(150);
 		lexemeTable.getColumns().addAll(lexCol,classCol);
 		
 		TableColumn idCol = new TableColumn("Identifier");
 		TableColumn valCol = new TableColumn("Value");
 		idCol.setCellValueFactory(new PropertyValueFactory<>("identifier"));
+		idCol.setMinWidth(150);
 		valCol.setCellValueFactory(new PropertyValueFactory<>("value"));
+		valCol.setMinWidth(150);
 		symbolTable.getColumns().addAll(idCol,valCol);
 		
 		this.code.setLayoutX(MainStage.WINDOW_WIDTH*0.01);
@@ -331,11 +335,6 @@ public class MainStage {
 			classification.add("Soft-Line/Command Break");
 			s = "";
 		}
-		else if (s.matches("^(BTW)$")) {
-			lexemes.add(s);
-			classification.add("BTW Keyword");
-			s = "";
-		}
 		else if(s.matches("^([A-Za-z][A-Za-z0-9\\_]*)$") && 
 				(classification.get(classification.size()-1) == "Variable Declaration" ||
 				classification.get(classification.size()-1) == "Literal" ||
@@ -344,7 +343,7 @@ public class MainStage {
 				(classification.get(classification.size()-1) == "Variable Identifier" &&
 				classification.get(classification.size()-2) == "Input Keyword") ||
 				classification.get(classification.size()-1) == "Arithmetic Operation Keyword" 
-				)) {										//variable identifier
+				)) {																						//variable identifier
 			lexemes.add(s);
 			classification.add("Variable Identifier");
 			s = "";
@@ -369,9 +368,37 @@ public class MainStage {
 			classification.add("String Delimiter");
 			s = "";
 		}
-//		else if(s.matches();
-//				classification.get(classification.size()-1) == "BTW Keyword" ||
-//				classification.get(classification.size()-1) == "Comment" )
+		else if(s.matches("^(HOW IZ I)$")) {				//function delimeter
+			lexemes.add(s);
+			classification.add("HOW IZ I Keyword");
+			s = "";
+		}
+		else if(s.matches("^([A-Za-z][A-Za-z0-9\\_]*)$") &&				
+				(classification.get(classification.size()-1) == "HOW IZ I Keyword")
+				){																							//function identifier(bonus)
+			lexemes.add(s);
+			classification.add("Function Identifier");
+			s = "";
+		}
+		else if(s.matches("^(IF U SAY SO)$")) {				//function delimeter
+			lexemes.add(s);
+			classification.add("IF U SAY SO Keyword");
+			s = "";
+		}
+//		else if (s.matches("^(BTW)$")) {					//ignore comments
+//			lexemes.add(s);
+//			classification.add("BTW Keyword");
+//			s = "";
+//		}
+//		
+//		else if(s.matches("^(.*)$") && 
+//				(classification.get(classification.size()-1) == "BTW Keyword" ||
+//				classification.get(classification.size()-1) == "Comment")
+//		){
+//			lexemes.add(s);
+//			classification.add("Comment");
+//			//s = "";
+//		}
 		
 		//if the string has a comma at the end
 		if(containsComma) {
@@ -383,6 +410,10 @@ public class MainStage {
 	private void addMouseEventHandler() {
 		file_btn.setOnMouseClicked(new EventHandler<MouseEvent>(){		//eventhandler for file chooser
 			public void handle(MouseEvent e) {
+				//clear arraylist of lexemes
+				lexemes.clear();
+				classification.clear();
+				
 				//file reading implementation
 				File file = fileChooser.showOpenDialog(stage);
 				
@@ -395,32 +426,32 @@ public class MainStage {
 						while((str=br.readLine())!=null) {										//read each line of file
 							program = program + str + "\n";										//for printing the source code
 							
-							if(str.contains("\\x{09}") || str.contains("\t")) {
+							if(str.contains("\\x{09}") || str.contains("\t")) {					//remove tabs from the program
 								str = str.replaceAll("[\\x{09}\t]+", "");
 							}
-							System.out.println("line: "+str);
+							System.out.println("reading line:"+str);
 							
 							if(!str.contains(" ")) {											//if string can't be split (one word line)
 								lexemeChecker(str);
 							}else {
-								String[] words = str.split(" ");									//split each word by space delimiter  //TOKENIZE
+								String[] words = str.split(" ");								//split each word by space delimiter  //TOKENIZE
 								String s = new String();
-								s = words[0];
+								if(words.length != 0) s = words[0];
 								s = s.replaceAll("[^a-zA-Z0-9\"]", "");
 								
 								for(int i=1;i<(words.length);i++) {
-									System.out.println(words.length + " word: " + words[i]);
-									s = lexemeChecker(s);					//check token if lexeme
+									//System.out.println("checking word:" + words[i]);
+									s = lexemeChecker(s);										//check token if lexeme
 									
-									if(words.length != 1) {					//add next word to the string to compare
+									if(words.length != 1) {										//add next word to the string to compare
 										if(s == "") {
 											s = words[i];
 										}else {
 											s = s + " " + words[i];
 										}
 									}
-									if(i == (words.length-1)) s = lexemeChecker(s);					//check last word
-									System.out.println("s: "+s);		
+									if(i == (words.length-1)) s = lexemeChecker(s);				//check last lexeme
+									System.out.println("current s:"+s);		
 								}
 								System.out.println();
 							}
@@ -433,9 +464,10 @@ public class MainStage {
 //						System.out.println("\n============LEXEMES============ n:" + lexemes.size());
 						for(int i=0;i<lexemes.size();i++) {
 							lexTable.add(new Lexeme(lexemes.get(i), classification.get(i)));
-//							System.out.println(lexemes.get(i) + " :: " + classification.get(i));
+							//System.out.println(lexemes.get(i) + " :: " + classification.get(i));
 						}
-						lexemeTable.setItems(lexTable);				
+						lexemeTable.setItems(lexTable);											//add to tableview content	
+						System.out.println("lexeme count: "+lexemes.size());
 					}else {
 						//print error if no file is selected
 						System.out.println("[!] No file selected.");
