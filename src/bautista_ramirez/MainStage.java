@@ -331,6 +331,11 @@ public class MainStage {
 			classification.add("Soft-Line/Command Break");
 			s = "";
 		}
+		else if (s.matches("^(BTW)$")) {
+			lexemes.add(s);
+			classification.add("BTW Keyword");
+			s = "";
+		}
 		else if(s.matches("^([A-Za-z][A-Za-z0-9\\_]*)$") && 
 				(classification.get(classification.size()-1) == "Variable Declaration" ||
 				classification.get(classification.size()-1) == "Literal" ||
@@ -346,12 +351,12 @@ public class MainStage {
 		}
 		else if(s.matches("^(-?\\d+)$")) {					//numbr
 			lexemes.add(s);
-			classification.add("Literal");
+			classification.add("NUMBR Literal");
 			s = "";
 		}
 		else if(s.matches("^(-?\\d*\\.\\d+)$")) {			//numbar
 			lexemes.add(s);
-			classification.add("Literal");
+			classification.add("NUMBAR Literal");
 			s = "";
 		}
 		else if(s.matches("^(\\\".*\\\")$")) {				//yarn
@@ -359,11 +364,14 @@ public class MainStage {
 			classification.add("String Delimiter");
 			s = s.substring(1,(s.length()-1));				//remove the ""
 			lexemes.add(s);
-			classification.add("Literal");
+			classification.add("YARN Literal");
 			lexemes.add("\"");
 			classification.add("String Delimiter");
 			s = "";
 		}
+//		else if(s.matches();
+//				classification.get(classification.size()-1) == "BTW Keyword" ||
+//				classification.get(classification.size()-1) == "Comment" )
 		
 		//if the string has a comma at the end
 		if(containsComma) {
@@ -385,24 +393,23 @@ public class MainStage {
 						String program = "", str;
 						
 						while((str=br.readLine())!=null) {										//read each line of file
-							program = program + str + "\n";
-							System.out.println("line: "+"\""+str+"\"");
+							program = program + str + "\n";										//for printing the source code
 							
 							if(str.contains("\\x{09}") || str.contains("\t")) {
 								str = str.replaceAll("[\\x{09}\t]+", "");
 							}
+							System.out.println("line: "+str);
 							
 							if(!str.contains(" ")) {											//if string can't be split (one word line)
 								lexemeChecker(str);
 							}else {
 								String[] words = str.split(" ");									//split each word by space delimiter  //TOKENIZE
 								String s = new String();
-							
 								s = words[0];
-								s = s.replaceAll("[^a-zA-Z0-9\"]", ""); 							//clean
+								s = s.replaceAll("[^a-zA-Z0-9\"]", "");
 								
 								for(int i=1;i<(words.length);i++) {
-									System.out.println(words.length + " word: " + "\"" + words[i] + "\"");
+									System.out.println(words.length + " word: " + words[i]);
 									s = lexemeChecker(s);					//check token if lexeme
 									
 									if(words.length != 1) {					//add next word to the string to compare
@@ -413,7 +420,7 @@ public class MainStage {
 										}
 									}
 									if(i == (words.length-1)) s = lexemeChecker(s);					//check last word
-									System.out.println("s: "+"\""+s+"\"");		
+									System.out.println("s: "+s);		
 								}
 								System.out.println();
 							}
@@ -423,11 +430,10 @@ public class MainStage {
 						//printing of lexemes lexemeTable
 						ObservableList<Lexeme> lexTable = FXCollections.observableArrayList();
 
-						System.out.println("\n============LEXEMES============ n:" + lexemes.size());
+//						System.out.println("\n============LEXEMES============ n:" + lexemes.size());
 						for(int i=0;i<lexemes.size();i++) {
-							map.put(lexemes.get(i), classification.get(i));
 							lexTable.add(new Lexeme(lexemes.get(i), classification.get(i)));
-							System.out.println(lexemes.get(i) + " :: " + classification.get(i));
+//							System.out.println(lexemes.get(i) + " :: " + classification.get(i));
 						}
 						lexemeTable.setItems(lexTable);				
 					}else {
