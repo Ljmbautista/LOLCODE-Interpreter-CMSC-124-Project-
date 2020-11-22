@@ -14,7 +14,7 @@ public class Identifier {
 	public String getIdentifier() {
 		return this.identifier;
 	}
-	public String getVal() {
+	public String getValue() {
 		return this.value;
 	}
 }

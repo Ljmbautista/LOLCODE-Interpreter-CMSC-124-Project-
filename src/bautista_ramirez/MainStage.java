@@ -39,12 +39,12 @@ public class MainStage {
 	private Button execute_btn;
 	private FileChooser fileChooser;
 	
-	private ArrayList<String> lexemes;								//arraylist of lexeme
+	private ArrayList<String> lexemes;								//arraylist of lexemes
 	private ArrayList<String> classification;						//arraylist of classification
-	private ArrayList<String> identifier;							//arraylist of lexeme
-	private ArrayList<String> value;								//arraylist of classification
+	private ArrayList<String> identifiers;							//arraylist of identifiers
+	private ArrayList<String> values;								//arraylist of value of identifiers
 	public TableView<Lexeme> lexemeTable = new TableView();
-	public TableView<Lexeme> symbolTable = new TableView();
+	public TableView<Identifier> symbolTable = new TableView();
 	private TextArea code;
 	private TextArea output;
 	
@@ -52,12 +52,14 @@ public class MainStage {
 	public final static int WINDOW_HEIGHT = 720;
 	public boolean hasSyntaxError = false;							//flag for syntax error
 	
-	public MainStage() {								//constructor for MainStage
+	public MainStage() {											//constructor for MainStage
 		this.root = new Group();
 		this.scene = new Scene(root, MainStage.WINDOW_WIDTH,MainStage.WINDOW_HEIGHT,Color.rgb(97,134,133));
 		this.canvas = new Canvas(MainStage.WINDOW_WIDTH,MainStage.WINDOW_HEIGHT);
 		this.lexemes = new ArrayList<String>();	
 		this.classification = new ArrayList<String>();	
+		this.identifiers = new ArrayList<String>();	
+		this.values = new ArrayList<String>();	
 		this.file_btn = new Button();
 		this.execute_btn = new Button();
 		this.fileChooser = new FileChooser();
@@ -65,7 +67,7 @@ public class MainStage {
 		this.output = new TextArea();
 	}
 	
-	public void setStage(Stage stage) {							//function for adding elements to stage
+	public void setStage(Stage stage) {								//function for adding elements to stage
 		this.stage = stage;
 		this.addMouseEventHandler();
 		
@@ -140,7 +142,7 @@ public class MainStage {
 			lexemes.add(s);
 			classification.add("Code Delimiter");
 		}
-		else if(s.matches("^(I HAS A)$")) {
+		else if(s.matches("^(I HAS A)$")) {						
 			lexemes.add(s);
 			classification.add("Variable Declaration");
 			s = "";
@@ -346,60 +348,70 @@ public class MainStage {
 			classification.add("Soft-Line/Command Break");
 			s = "";
 		}
-		else if(s.matches("^([A-Za-z][A-Za-z0-9\\_]*)$") && 
+		else if(s.matches("^([A-Za-z][A-Za-z0-9\\_]*)$") && 									//ETO MASTER
 				(
 					classification.get(classification.size()-1) == "Variable Declaration" ||
-					classification.get(classification.size()-1) == "Literal" ||
 					classification.get(classification.size()-1) == "AN Keyword" ||
 					classification.get(classification.size()-1) == "Input Keyword" ||
 					(classification.get(classification.size()-1) == "Variable Identifier" &&
 					classification.get(classification.size()-2) == "Input Keyword") ||
 					classification.get(classification.size()-1) == "Arithmetic Operation Keyword" ||
+					classification.get(classification.size()-1) == "Literal" ||
 					classification.get(classification.size()-1) == "String Delimiter"
 				)
-				) {																						//variable identifier
+				) {																				//variable identifier
+			/*
+			 * 
+			 * MAY ERROR PA DITO SA VARIABLE IDENTIFIER DI NAREREAD PAG MAGKASUNOD YUNG VARIABLE DECLARATION
+			 * I HAS A var ITZ 124
+			 * I HAS A var2
+			 * pumapasok sa string delimiter / literal na condition
+			 * 
+			 * 
+			 */
+			System.out.println(s);
 			lexemes.add(s);
 			classification.add("Variable Identifier");
 			s = "";
 		}
-		else if(s.matches("^(-?\\d+)$")) {					//numbr
+		else if(s.matches("^(-?\\d+)$")) {														//numbr/integer
 			lexemes.add(s);
 			classification.add("Literal");
 			s = "";
 		}
-		else if(s.matches("^(-?\\d*\\.\\d+)$")) {			//numbar
+		else if(s.matches("^(-?\\d*\\.\\d+)$")) {												//numbar/float
 			lexemes.add(s);
 			classification.add("Literal");
 			s = "";
 		}
-		else if(s.matches("^(\\\".*\\\")$")) {				//yarn
+		else if(s.matches("^(\\\".*\\\")$")) {													//yarn/string
 			lexemes.add("\"");
 			classification.add("String Delimiter");
-			s = s.substring(1,(s.length()-1));				//remove the ""
+			s = s.substring(1,(s.length()-1));													//remove the ""
 			lexemes.add(s);
 			classification.add("Literal");
 			lexemes.add("\"");
 			classification.add("String Delimiter");
 			s = "";
 		}
-		else if(s.matches("^(HOW IZ I)$")) {				//function delimeter
+		else if(s.matches("^(HOW IZ I)$")) {													//function delimeter
 			lexemes.add(s);
 			classification.add("HOW IZ I Keyword");
 			s = "";
 		}
 		else if(s.matches("^([A-Za-z][A-Za-z0-9\\_]*)$") &&				
 				(classification.get(classification.size()-1) == "HOW IZ I Keyword")
-				){																							//function identifier(bonus)
+				){																				//function identifier(bonus)
 			lexemes.add(s);
 			classification.add("Function Identifier");
 			s = "";
 		}
-		else if(s.matches("^(IF U SAY SO)$")) {				//function delimeter
+		else if(s.matches("^(IF U SAY SO)$")) {													//function delimeter
 			lexemes.add(s);
 			classification.add("IF U SAY SO Keyword");
 			s = "";
 		}
-//		else if (s.matches("^(BTW)$")) {					//ignore comments
+//		else if (s.matches("^(BTW)$")) {														//ignore comments
 //			lexemes.add(s);
 //			classification.add("BTW Keyword");
 //			s = "";
@@ -428,10 +440,38 @@ public class MainStage {
 		}
 	}
 
+	public void variableChecker() {														//function for identifying variables
+		if(classification.contains("Variable Identifier")) {
+			System.out.println("lexemes has variable");
+			for(int i=0;i<lexemes.size()-1;i++) {
+				//check for variable declaration/s
+				System.out.println("current lexeme:"+lexemes.get(i));
+				System.out.println("next lexeme:"+lexemes.get(i+1));
+				if(classification.get(i).matches("Variable Declaration")) {					//if I HAS A
+					System.out.println("yass variable declaration");
+					try {
+						//initialized variable
+						if(classification.get(i+2).matches("Variable Assignment")) {		//if 2nd word after the I HAS A is ITZ
+							identifiers.add(lexemes.get(i+1));								//add the variable to the list of identifiers
+							values.add(lexemes.get(i+3));									//add the value of the variable to the list of values
+						}else {
+							//uninitialized variable
+							identifiers.add(lexemes.get(i+1));								//add the variable to the list of identifiers
+							values.add("NOOB");												//NOOB value for uninitialized variables
+						}
+					}
+					catch(Exception e) {													//if variable is not a declaration/initialization skip
+						continue;
+					}
+				}
+				System.out.println();
+			}
+		}
+	}
 	private void addMouseEventHandler() {
-		file_btn.setOnMouseClicked(new EventHandler<MouseEvent>(){		//eventhandler for file chooser
+		file_btn.setOnMouseClicked(new EventHandler<MouseEvent>(){						//eventhandler for file chooser
 			public void handle(MouseEvent e) {
-				int line_number = 0;															//current line
+				int line_number = 0;													//current line number
 				hasSyntaxError = false;
 				
 				//clear incase of next click
@@ -439,6 +479,9 @@ public class MainStage {
 				classification.clear();
 				output.clear();
 				code.clear();
+				identifiers.clear();
+				values.clear();
+				
 				for ( int i = 0; i<lexemeTable.getItems().size(); i++) {
 					lexemeTable.getItems().clear(); 
 			    } 
@@ -467,6 +510,12 @@ public class MainStage {
 							if(str.matches("^(BTW)$") || 
 								str.matches("^(OBTW)$") ||
 								str.matches("^(TLDR)$")) continue;								//ignore comment/s
+							if(str.matches("^(VISIBLE)$") ||
+								str.matches("^(GIMMEH)$")) {
+								//these keywords require a variable on the next word/token
+								hasSyntaxError = true;
+							}
+							
 							if(!str.contains(" ")) {											//if string can't be split (one word line)
 								lexemeChecker(str);
 							}else {
@@ -475,7 +524,7 @@ public class MainStage {
 								if(words.length != 0 && 
 								(words[0].matches("^(BTW)$") || 
 								words[0].matches("^(OBTW)$") ||
-								words[0].matches("^(TLDR)$"))) continue;						//ignore comments
+								words[0].matches("^(TLDR)$"))) continue;									//ignore comments
 								
 								if(words.length != 0) s = words[0];
 								s = s.replaceAll("[^a-zA-Z0-9\"]", "");
@@ -483,13 +532,13 @@ public class MainStage {
 								for(int i=1;i<(words.length);i++) {
 									System.out.println("checking word:" + words[i]);
 									try{
-										s = lexemeChecker(s);									//check token if lexeme
+										s = lexemeChecker(s);												//check token if lexeme
 									}
 									catch(Exception e1) {
 										hasSyntaxError = true;
 									}
 									
-									if(words.length != 1) {										//add next word to the string to compare
+									if(words.length != 1) {													//add next word to the string to compare
 										if(s == "") {
 											s = words[i];
 										}else {
@@ -497,8 +546,8 @@ public class MainStage {
 										}
 									}
 									if(i == (words.length-1)) {
-										s = lexemeChecker(s);				//check last lexeme
-										if(s.matches("")== false) {			//if there is an unclassified token left on string
+										s = lexemeChecker(s);												//check last lexeme
+										if(s.matches("")== false) {											//if there is an unclassified token left on string
 											hasSyntaxError = true;
 										}
 									}
@@ -512,12 +561,12 @@ public class MainStage {
 								out = "$lci "+file.getName()+"\n";
 								out += "[ ! ] Error in line "+line_number;
 								System.out.println(out);
-								output.setText(out);											//print error to gui
-								break;															//terminate if there's an error
+								output.setText(out);														//print error to gui
+								break;																		//terminate if there's an error
 							}
 						}
 						//check if file is delimited by a KTHXBYE
-						if(lexemes.get(lexemes.size()-1).matches("KTHXBYE") == false) { //file must be delimited by a closing KTHXBYE
+						if(lexemes.get(lexemes.size()-1).matches("KTHXBYE") == false) { 					//file must be delimited by a closing KTHXBYE
 							hasSyntaxError = true; 
 						}
 						if(!hasSyntaxError) {			//print only if no error
@@ -530,13 +579,13 @@ public class MainStage {
 								lexTable.add(new Lexeme(lexemes.get(i), classification.get(i)));
 								//System.out.println(lexemes.get(i) + " :: " + classification.get(i));
 							}
-							lexemeTable.setItems(lexTable);											//add to tableview content	
+							lexemeTable.setItems(lexTable);													//add to tableview content	
 							System.out.println("lexeme count: "+lexemes.size());
 						}else {
 							out = "$lci "+file.getName()+"\n";
 							out += "[ ! ] Error in line "+line_number;
 							System.out.println(out);
-							output.setText(out);											//print error to gui
+							output.setText(out);															//print error to gui
 						}
 					}else {
 						//print error if no file is selected
@@ -546,6 +595,32 @@ public class MainStage {
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
+			}
+		});
+		execute_btn.setOnMouseClicked(new EventHandler<MouseEvent>(){						//eventhandler for execute button
+			public void handle(MouseEvent e) {
+				//clear for next click
+				identifiers.clear();
+				values.clear();
+				for ( int i = 0; i<symbolTable.getItems().size(); i++) {
+					symbolTable.getItems().clear(); 
+			    } 
+				
+				variableChecker();															//check variable declarations/initializations
+				for(int i=0;i<identifiers.size();i++) {
+					System.out.println(identifiers.get(i) + " = "+ values.get(i));
+				}
+				
+				if(identifiers.size()!=0) {
+					ObservableList<Identifier> symTable = FXCollections.observableArrayList();
+					for(int i=0;i<identifiers.size();i++) {
+						symTable.add(new Identifier(identifiers.get(i), values.get(i).toString()));
+					}
+					symbolTable.setItems(symTable);													//add to tableview content	
+					System.out.println("identifier count: "+identifiers.size());
+				}
+				
+				
 			}
 		});
 	}
