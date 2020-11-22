@@ -41,6 +41,8 @@ public class MainStage {
 	
 	private ArrayList<String> lexemes;								//arraylist of lexeme
 	private ArrayList<String> classification;						//arraylist of classification
+	private ArrayList<String> identifier;							//arraylist of lexeme
+	private ArrayList<String> value;								//arraylist of classification
 	public TableView<Lexeme> lexemeTable = new TableView();
 	public TableView<Lexeme> symbolTable = new TableView();
 	private TextArea code;
@@ -345,26 +347,29 @@ public class MainStage {
 			s = "";
 		}
 		else if(s.matches("^([A-Za-z][A-Za-z0-9\\_]*)$") && 
-				(classification.get(classification.size()-1) == "Variable Declaration" ||
-				classification.get(classification.size()-1) == "Literal" ||
-				classification.get(classification.size()-1) == "AN Keyword" ||
-				classification.get(classification.size()-1) == "Input Keyword" ||
-				(classification.get(classification.size()-1) == "Variable Identifier" &&
-				classification.get(classification.size()-2) == "Input Keyword") ||
-				classification.get(classification.size()-1) == "Arithmetic Operation Keyword" 
-				)) {																						//variable identifier
+				(
+					classification.get(classification.size()-1) == "Variable Declaration" ||
+					classification.get(classification.size()-1) == "Literal" ||
+					classification.get(classification.size()-1) == "AN Keyword" ||
+					classification.get(classification.size()-1) == "Input Keyword" ||
+					(classification.get(classification.size()-1) == "Variable Identifier" &&
+					classification.get(classification.size()-2) == "Input Keyword") ||
+					classification.get(classification.size()-1) == "Arithmetic Operation Keyword" ||
+					classification.get(classification.size()-1) == "String Delimiter"
+				)
+				) {																						//variable identifier
 			lexemes.add(s);
 			classification.add("Variable Identifier");
 			s = "";
 		}
 		else if(s.matches("^(-?\\d+)$")) {					//numbr
 			lexemes.add(s);
-			classification.add("NUMBR Literal");
+			classification.add("Literal");
 			s = "";
 		}
 		else if(s.matches("^(-?\\d*\\.\\d+)$")) {			//numbar
 			lexemes.add(s);
-			classification.add("NUMBAR Literal");
+			classification.add("Literal");
 			s = "";
 		}
 		else if(s.matches("^(\\\".*\\\")$")) {				//yarn
@@ -372,7 +377,7 @@ public class MainStage {
 			classification.add("String Delimiter");
 			s = s.substring(1,(s.length()-1));				//remove the ""
 			lexemes.add(s);
-			classification.add("YARN Literal");
+			classification.add("Literal");
 			lexemes.add("\"");
 			classification.add("String Delimiter");
 			s = "";
@@ -432,8 +437,15 @@ public class MainStage {
 				//clear incase of next click
 				lexemes.clear();
 				classification.clear();
-				
-				
+				output.clear();
+				code.clear();
+				for ( int i = 0; i<lexemeTable.getItems().size(); i++) {
+					lexemeTable.getItems().clear(); 
+			    } 
+				for ( int i = 0; i<symbolTable.getItems().size(); i++) {
+					symbolTable.getItems().clear(); 
+			    } 
+					
 				//file reading implementation
 				File file = fileChooser.showOpenDialog(stage);
 				
@@ -450,19 +462,32 @@ public class MainStage {
 							if(str.contains("\\x{09}") || str.contains("\t")) {					//remove tabs from the program
 								str = str.replaceAll("[\\x{09}\t]+", "");
 							}
-							System.out.println("reading line:"+str);
+							System.out.println("reading line("+line_number+"):"+str);
 							
+							if(str.matches("^(BTW)$") || 
+								str.matches("^(OBTW)$") ||
+								str.matches("^(TLDR)$")) continue;								//ignore comment/s
 							if(!str.contains(" ")) {											//if string can't be split (one word line)
 								lexemeChecker(str);
 							}else {
 								String[] words = str.split(" ");								//split each word by space delimiter  //TOKENIZE
 								String s = new String();
+								if(words.length != 0 && 
+								(words[0].matches("^(BTW)$") || 
+								words[0].matches("^(OBTW)$") ||
+								words[0].matches("^(TLDR)$"))) continue;						//ignore comments
+								
 								if(words.length != 0) s = words[0];
 								s = s.replaceAll("[^a-zA-Z0-9\"]", "");
 								
 								for(int i=1;i<(words.length);i++) {
-									//System.out.println("checking word:" + words[i]);
-									s = lexemeChecker(s);										//check token if lexeme
+									System.out.println("checking word:" + words[i]);
+									try{
+										s = lexemeChecker(s);									//check token if lexeme
+									}
+									catch(Exception e1) {
+										hasSyntaxError = true;
+									}
 									
 									if(words.length != 1) {										//add next word to the string to compare
 										if(s == "") {
@@ -471,7 +496,12 @@ public class MainStage {
 											s = s + " " + words[i];
 										}
 									}
-									if(i == (words.length-1)) s = lexemeChecker(s);				//check last lexeme
+									if(i == (words.length-1)) {
+										s = lexemeChecker(s);				//check last lexeme
+										if(s.matches("")== false) {			//if there is an unclassified token left on string
+											hasSyntaxError = true;
+										}
+									}
 									System.out.println("current s:"+s);		
 								}
 								System.out.println();
@@ -480,24 +510,34 @@ public class MainStage {
 							if(str.matches("") == false) syntaxChecker();
 							if(hasSyntaxError) {
 								out = "$lci "+file.getName()+"\n";
-								out += "[!] error in line "+line_number;
+								out += "[ ! ] Error in line "+line_number;
 								System.out.println(out);
 								output.setText(out);											//print error to gui
 								break;															//terminate if there's an error
 							}
 						}
-						
-						code.setText(program);
-						//printing of lexemes lexemeTable
-						ObservableList<Lexeme> lexTable = FXCollections.observableArrayList();
-
-//						System.out.println("\n============LEXEMES============ n:" + lexemes.size());
-						for(int i=0;i<lexemes.size();i++) {
-							lexTable.add(new Lexeme(lexemes.get(i), classification.get(i)));
-							//System.out.println(lexemes.get(i) + " :: " + classification.get(i));
+						//check if file is delimited by a KTHXBYE
+						if(lexemes.get(lexemes.size()-1).matches("KTHXBYE") == false) { //file must be delimited by a closing KTHXBYE
+							hasSyntaxError = true; 
 						}
-						lexemeTable.setItems(lexTable);											//add to tableview content	
-						System.out.println("lexeme count: "+lexemes.size());
+						if(!hasSyntaxError) {			//print only if no error
+							code.setText(program);
+							//printing of lexemes lexemeTable
+							ObservableList<Lexeme> lexTable = FXCollections.observableArrayList();
+
+//							System.out.println("\n============LEXEMES============ n:" + lexemes.size());
+							for(int i=0;i<lexemes.size();i++) {
+								lexTable.add(new Lexeme(lexemes.get(i), classification.get(i)));
+								//System.out.println(lexemes.get(i) + " :: " + classification.get(i));
+							}
+							lexemeTable.setItems(lexTable);											//add to tableview content	
+							System.out.println("lexeme count: "+lexemes.size());
+						}else {
+							out = "$lci "+file.getName()+"\n";
+							out += "[ ! ] Error in line "+line_number;
+							System.out.println(out);
+							output.setText(out);											//print error to gui
+						}
 					}else {
 						//print error if no file is selected
 						System.out.println("[!] No file selected.");
