@@ -36,26 +36,28 @@ public class MainStage {
 	private Group root;
 	private Canvas canvas;
 	private Button file_btn;
+	private Button execute_btn;
 	private FileChooser fileChooser;
 	
-	private ArrayList<String> lexemes;					//arraylist of lexeme
-	private ArrayList<String> classification;			//arraylist of classification
-	
-	public final static int WINDOW_WIDTH = 1080;
-	public final static int WINDOW_HEIGHT = 720;
+	private ArrayList<String> lexemes;								//arraylist of lexeme
+	private ArrayList<String> classification;						//arraylist of classification
 	public TableView<Lexeme> lexemeTable = new TableView();
 	public TableView<Lexeme> symbolTable = new TableView();
 	private TextArea code;
 	private TextArea output;
-		
+	
+	public final static int WINDOW_WIDTH = 1080;
+	public final static int WINDOW_HEIGHT = 720;
+	public boolean hasSyntaxError = false;							//flag for syntax error
 	
 	public MainStage() {								//constructor for MainStage
 		this.root = new Group();
-		this.scene = new Scene(root, MainStage.WINDOW_WIDTH,MainStage.WINDOW_HEIGHT);	
+		this.scene = new Scene(root, MainStage.WINDOW_WIDTH,MainStage.WINDOW_HEIGHT,Color.rgb(97,134,133));
 		this.canvas = new Canvas(MainStage.WINDOW_WIDTH,MainStage.WINDOW_HEIGHT);
 		this.lexemes = new ArrayList<String>();	
 		this.classification = new ArrayList<String>();	
 		this.file_btn = new Button();
+		this.execute_btn = new Button();
 		this.fileChooser = new FileChooser();
 		this.code = new TextArea();
 		this.output = new TextArea();
@@ -65,10 +67,17 @@ public class MainStage {
 		this.stage = stage;
 		this.addMouseEventHandler();
 		
-		this.file_btn.setText("  Add file...  ");
+		this.file_btn.setText("  SELECT FILE  ");
         this.file_btn.setFont(new Font(12));
 		this.file_btn.setLayoutX(MainStage.WINDOW_WIDTH*0.01);
-		this.file_btn.setLayoutY(MainStage.WINDOW_WIDTH*0.01);
+		this.file_btn.setLayoutY(MainStage.WINDOW_WIDTH*0.03);
+		this.file_btn.setStyle("-fx-background-color: #d5f4e6; ");
+		
+		this.execute_btn.setText("          EXECUTE          ");
+        this.execute_btn.setFont(new Font(12));
+		this.execute_btn.setLayoutX(MainStage.WINDOW_WIDTH*0.48);
+		this.execute_btn.setLayoutY(MainStage.WINDOW_HEIGHT*0.47);
+		this.execute_btn.setStyle("-fx-background-color: #d5f4e6; ");
 		
 		lexemeTable.setLayoutX(MainStage.WINDOW_WIDTH*0.4);
 		lexemeTable.setLayoutY(MainStage.WINDOW_HEIGHT*0.05);
@@ -97,16 +106,16 @@ public class MainStage {
 		symbolTable.getColumns().addAll(idCol,valCol);
 		
 		this.code.setLayoutX(MainStage.WINDOW_WIDTH*0.01);
-		this.code.setLayoutY(MainStage.WINDOW_HEIGHT*0.05);
+		this.code.setLayoutY(MainStage.WINDOW_HEIGHT*0.10);
 		this.code.setMaxWidth(WINDOW_WIDTH*0.36);
-		this.code.setMinHeight(MainStage.WINDOW_HEIGHT*0.4);
+		this.code.setMinHeight(MainStage.WINDOW_HEIGHT*0.35);
 
 		this.output.setLayoutX(MainStage.WINDOW_WIDTH*0.01);
 		this.output.setLayoutY(MainStage.WINDOW_HEIGHT*0.525);
 		this.output.setMinWidth(WINDOW_WIDTH*0.975);
 		this.output.setMinHeight(MainStage.WINDOW_HEIGHT*0.45);
 		
-		this.root.getChildren().addAll(canvas,file_btn,code,lexemeTable,symbolTable,output);
+		this.root.getChildren().addAll(canvas,file_btn,code,lexemeTable,symbolTable,output,execute_btn);
 		this.stage.setTitle("LOLCODE INTERPRETER");
 		this.stage.setScene(this.scene);
 		this.stage.show();
@@ -406,13 +415,24 @@ public class MainStage {
 		}
 		return s;
 	}
+	
+	public void syntaxChecker() {														//function for syntax checking
+		if(lexemes.size() != 0 && lexemes.get(0).matches("HAI") == false) {
+			//the code must be start with HAI
+			hasSyntaxError = true;
+		}
+	}
 
 	private void addMouseEventHandler() {
 		file_btn.setOnMouseClicked(new EventHandler<MouseEvent>(){		//eventhandler for file chooser
 			public void handle(MouseEvent e) {
-				//clear arraylist of lexemes
+				int line_number = 0;															//current line
+				hasSyntaxError = false;
+				
+				//clear incase of next click
 				lexemes.clear();
 				classification.clear();
+				
 				
 				//file reading implementation
 				File file = fileChooser.showOpenDialog(stage);
@@ -421,9 +441,10 @@ public class MainStage {
 					if(file != null) {		//if file not empty
 						LinkedHashMap<String,String> map = new LinkedHashMap();
 						BufferedReader br = new BufferedReader(new FileReader(file));
-						String program = "", str;
+						String program = "", out = "", str;
 						
 						while((str=br.readLine())!=null) {										//read each line of file
+							line_number++;														//increment line_number for every line found
 							program = program + str + "\n";										//for printing the source code
 							
 							if(str.contains("\\x{09}") || str.contains("\t")) {					//remove tabs from the program
@@ -454,6 +475,15 @@ public class MainStage {
 									System.out.println("current s:"+s);		
 								}
 								System.out.println();
+							}
+							//after each line check for error
+							if(str.matches("") == false) syntaxChecker();
+							if(hasSyntaxError) {
+								out = "$lci "+file.getName()+"\n";
+								out += "[!] error in line "+line_number;
+								System.out.println(out);
+								output.setText(out);											//print error to gui
+								break;															//terminate if there's an error
 							}
 						}
 						
