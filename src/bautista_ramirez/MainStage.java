@@ -128,7 +128,8 @@ public class MainStage {
 	public String lexemeChecker(String s) {
 		boolean containsComma = false;
 		
-		if(s.matches("^([a-zA-Z]+,)$")) {						//check if there is comma
+		//check if there is comma on the current string
+		if(s.matches("^([a-zA-Z]+,)$")) {						
 			containsComma = true;
 			s = s.substring(0,(s.length()-1));
 		}
@@ -347,32 +348,19 @@ public class MainStage {
 			lexemes.add(s);
 			classification.add("Soft-Line/Command Break");
 			s = "";
-		}
-		else if(s.matches("^([A-Za-z][A-Za-z0-9\\_]*)$") && 									//ETO MASTER
-				(
-					classification.get(classification.size()-1) == "Variable Declaration" ||
-					classification.get(classification.size()-1) == "AN Keyword" ||
-					classification.get(classification.size()-1) == "Input Keyword" ||
-					(classification.get(classification.size()-1) == "Variable Identifier" &&
-					classification.get(classification.size()-2) == "Input Keyword") ||
-					classification.get(classification.size()-1) == "Arithmetic Operation Keyword" ||
-					classification.get(classification.size()-1) == "Literal" ||
-					classification.get(classification.size()-1) == "String Delimiter"
-				)
-				) {																				//variable identifier
-			/*
-			 * 
-			 * MAY ERROR PA DITO SA VARIABLE IDENTIFIER DI NAREREAD PAG MAGKASUNOD YUNG VARIABLE DECLARATION
-			 * I HAS A var ITZ 124
-			 * I HAS A var2
-			 * pumapasok sa string delimiter / literal na condition
-			 * 
-			 * 
-			 */
-			System.out.println(s);
-			lexemes.add(s);
-			classification.add("Variable Identifier");
-			s = "";
+		}																			
+		else if(s.matches("^([A-Za-z][A-Za-z0-9\\_]*)$")){									//variable identifier
+			if(classification.get(classification.size()-1) == "Variable Declaration") {		//variable declaration
+				lexemes.add(s);
+				classification.add("Variable Identifier");
+				s = "";
+			}
+			else if(lexemes.contains(s)) {													//variables used on other operations should be declared
+				lexemes.add(s);
+				classification.add("Variable Identifier");
+				s = "";
+			}
+			//if varident not in list of declared variables, error
 		}
 		else if(s.matches("^(-?\\d+)$")) {														//numbr/integer
 			lexemes.add(s);
@@ -426,7 +414,7 @@ public class MainStage {
 //			//s = "";
 //		}
 		
-		//if the string has a comma at the end
+		//if the string has a comma
 		if(containsComma) {
 			lexemeChecker(",");
 		}
