@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -51,6 +52,7 @@ public class MainStage {
 	public final static int WINDOW_WIDTH = 1080;
 	public final static int WINDOW_HEIGHT = 720;
 	public boolean hasSyntaxError = false;							//flag for syntax error
+	public boolean hasMultiLineComment = false;						//flag for multiline comment
 	
 	public MainStage() {											//constructor for MainStage
 		this.root = new Group();
@@ -127,7 +129,7 @@ public class MainStage {
 	
 	public String lexemeChecker(String s) {
 		boolean containsComma = false;
-		
+		System.out.println("checking s:"+s);
 		//check if there is comma on the current string
 		if(s.matches("^([a-zA-Z]+,)$")) {						
 			containsComma = true;
@@ -138,10 +140,19 @@ public class MainStage {
 		if(s.matches("^(HAI)$")) {
 			lexemes.add(s);
 			classification.add("Code Delimiter");
+			s="";
 		}
+//		else if(s.matches("^(HAI\s\\d\\.?\\d*)$")) {
+//			String[] words = s.split(" ");
+//			lexemes.add(words[0]);
+//			classification.add("Code Delimiter");
+//			lexemes.add(words[1]);
+//			classification.add("LOLCODE version");
+//		}
 		else if(s.matches("^(KTHXBYE)$")) {
 			lexemes.add(s);
 			classification.add("Code Delimiter");
+			s = "";
 		}
 		else if(s.matches("^(I HAS A)$")) {						
 			lexemes.add(s);
@@ -348,7 +359,38 @@ public class MainStage {
 			lexemes.add(s);
 			classification.add("Soft-Line/Command Break");
 			s = "";
-		}																			
+		}
+		else if(s.matches("^(WIN)$")) {
+			lexemes.add(s);
+			classification.add("Literal");
+			s = "";
+		}
+		else if(s.matches("^(FAIL)$")) {
+			lexemes.add(s);
+			classification.add("Literal");
+			s = "";
+		}
+		else if(s.matches("^(IT)$")) {
+			lexemes.add(s);
+			classification.add("Implicit Variable");
+			s="";
+		}
+		else if (s.matches("BTW")) {														//ignore comments
+			s = "";
+		}
+		else if(s.matches("^(TLDR)$")) {
+			hasMultiLineComment = false;
+			s="";
+		}
+		else if(s.matches("^(OBTW)$")) {
+			hasMultiLineComment = true;
+			s="";
+		}
+		else if(s.matches("^(NUMBR)$")) {
+			lexemes.add(s);
+			classification.add("NUMBR keyword");
+			s="";
+		}
 		else if(s.matches("^([A-Za-z][A-Za-z0-9\\_]*)$")){									//variable identifier
 			if(classification.get(classification.size()-1) == "Variable Declaration") {		//variable declaration
 				lexemes.add(s);
@@ -363,13 +405,26 @@ public class MainStage {
 			//if varident not in list of declared variables, error
 		}
 		else if(s.matches("^(-?\\d+)$")) {														//numbr/integer
+			if(!lexemes.isEmpty()) {
+				if(lexemes.get(lexemes.size()-1).matches("HAI")) {
+					classification.add("LOLCode Version");
+				}else {
+					classification.add("Literal");
+				}
+			}
 			lexemes.add(s);
-			classification.add("Literal");
 			s = "";
 		}
 		else if(s.matches("^(-?\\d*\\.\\d+)$")) {												//numbar/float
+			if(!lexemes.isEmpty()) {
+				System.out.println(lexemes.get(lexemes.size()-1));
+				if(lexemes.get(lexemes.size()-1).matches("HAI")) {
+					classification.add("LOLCode Version");
+				}else {
+					classification.add("Literal");
+				}
+			}
 			lexemes.add(s);
-			classification.add("Literal");
 			s = "";
 		}
 		else if(s.matches("^(\\\".*\\\")$")) {													//yarn/string
@@ -399,11 +454,6 @@ public class MainStage {
 			classification.add("IF U SAY SO Keyword");
 			s = "";
 		}
-//		else if (s.matches("^(BTW)$")) {														//ignore comments
-//			lexemes.add(s);
-//			classification.add("BTW Keyword");
-//			s = "";
-//		}
 //		
 //		else if(s.matches("^(.*)$") && 
 //				(classification.get(classification.size()-1) == "BTW Keyword" ||
@@ -428,8 +478,12 @@ public class MainStage {
 	}
 	public void hasKTHXBYE(){																//function for checking if has closing code delimiter
 		//the code must be delimited by KTHXBYE
-		if(lexemes.get(lexemes.size()-1).matches("KTHXBYE") == false) 
+		
+		if(lexemes.get(lexemes.size()-1).matches("KTHXBYE") == false) {
 			hasSyntaxError = true;
+			System.out.println("pasok");
+		}
+			
 	}
 	public void identifierChecker() {														//function for identifying variables
 		if(classification.contains("Variable Identifier")) {
@@ -461,6 +515,7 @@ public class MainStage {
 	}
 	private boolean isComment(String str) {													//checker if comment
 		//check if string is a comment
+		if(str.matches("^(OBTW)$")) hasMultiLineComment = true;								//flag for multi-line comment
 		if(str.matches("^(BTW)$") || str.matches("^(OBTW)$") || str.matches("^(TLDR)$")){
 			return true;
 		}else return false;
@@ -545,6 +600,7 @@ public class MainStage {
 			public void handle(MouseEvent e) {
 				int line_number = 0;														//current line number
 				hasSyntaxError = false;
+				hasMultiLineComment = false;
 				clearFileBtn();																//clear
 				
 				//file reading implementation
@@ -559,13 +615,14 @@ public class MainStage {
 							line_number++;															//increment line_number for every line found
 							program = program + str + "\n";											//for printing the source code
 							
-							str = removeTabs(str);													//remove tabs from the string
 							System.out.println("reading line("+line_number+"):"+str);
-							if(isComment(str)) continue;											//ignore comment/s
-							if(isInvalidIO(str)) hasSyntaxError = true;								//check if valid IO statement
-							if(isOneWord(str)) lexemeChecker(str);									//if string can't be split (one word-line)
+							if(removeTabs(str).matches("\s*TLDR")) hasMultiLineComment = false;		//if TLDR, end of multiline comment
+							if(isComment(removeTabs(str))) continue;								//ignore comment/s
+							if(isInvalidIO(removeTabs(str))) hasSyntaxError = true;					//check if valid IO statement
+							if(isOneWord(removeTabs(str))) lexemeChecker(removeTabs(str));			//if string can't be split (one word-line)
 							else {
-								String[] words = str.split(" ");									//split each word by space delimiter  //TOKENIZE
+								String[] words = str.split("\t| ");									//split each word by space delimiter  //TOKENIZE
+								System.out.println("words:"+Arrays.toString(words));
 								String s = new String();
 								
 								if(words.length != 0 && isComment(words[0])) continue;				//ignore comments
@@ -573,6 +630,19 @@ public class MainStage {
 								
 								for(int i=1;i<(words.length);i++) {									//start from the 2nd word
 									//System.out.println("checking word:" + words[i]);
+									
+//																		
+									if(s.matches("^(TLDR)$")) {										//ignore multiline comment
+										hasMultiLineComment = false;
+										continue;
+									}
+									if(hasMultiLineComment) {
+										System.out.println("MULTILINE COMMENT");
+										continue;
+									}
+									
+									if(isComment(s)) break;											//ignore comment/s
+									
 									try{ s = lexemeChecker(s); }									//check token if lexeme
 									catch(Exception e1) {											//if error occur during pattern checking, syntax error
 										hasSyntaxError = true;
