@@ -421,13 +421,16 @@ public class MainStage {
 		return s;
 	}
 	
-	public void syntaxChecker() {														//function for syntax checking
-		if(lexemes.size() != 0 && lexemes.get(0).matches("HAI") == false) {
-			//the code must be start with HAI
+	public void hasHAI() {																	//function for checking if has opening code delimiter
+		//the code must be start with HAI
+		if(lexemes.size() != 0 && lexemes.get(0).matches("HAI") == false) 
 			hasSyntaxError = true;
-		}
 	}
-
+	public void hasKTHXBYE(){																//function for checking if has closing code delimiter
+		//the code must be delimited by KTHXBYE
+		if(lexemes.get(lexemes.size()-1).matches("KTHXBYE") == false) 
+			hasSyntaxError = true;
+	}
 	public void identifierChecker() {														//function for identifying variables
 		if(classification.contains("Variable Identifier")) {
 			System.out.println("lexemes has variable");
@@ -586,9 +589,8 @@ public class MainStage {
 								}
 								System.out.println();
 							}
-							//after each line check for error
-							//if(isStringEmpty(str)) syntaxChecker();
-							if(!isStringEmpty(str)) syntaxChecker();
+							//check if file is started with HAI
+							if(!isStringEmpty(str)) hasHAI();
 							
 							//if there is a syntax error, print error prompt
 							if(hasSyntaxError) {
@@ -599,13 +601,12 @@ public class MainStage {
 							}
 						}
 						//check if file is delimited by a KTHXBYE
-						if(lexemes.get(lexemes.size()-1).matches("KTHXBYE") == false) { 			//file must be delimited by a closing KTHXBYE
-							hasSyntaxError = true; 
-						}
+						hasKTHXBYE(); 																//file must be delimited by a closing KTHXBYE
+						
 						if(!hasSyntaxError) {														//if no error, update interface
 							setSourceCode(program);
 							setLexemeTable();
-						}else {
+						}else {																		//if with error, print error
 							out = "$lci "+file.getName()+"\n";
 							out += "[ ! ] Error in line "+line_number;
 							setTerminal(out);														//print error to interface
