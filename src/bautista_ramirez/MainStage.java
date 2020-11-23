@@ -428,15 +428,15 @@ public class MainStage {
 		}
 	}
 
-	public void variableChecker() {														//function for identifying variables
+	public void identifierChecker() {														//function for identifying variables
 		if(classification.contains("Variable Identifier")) {
 			System.out.println("lexemes has variable");
 			for(int i=0;i<lexemes.size()-1;i++) {
 				//check for variable declaration/s
-				System.out.println("current lexeme:"+lexemes.get(i));
-				System.out.println("next lexeme:"+lexemes.get(i+1));
+//				System.out.println("current lexeme:"+lexemes.get(i));
+//				System.out.println("next lexeme:"+lexemes.get(i+1));
 				if(classification.get(i).matches("Variable Declaration")) {					//if I HAS A
-					System.out.println("yass variable declaration");
+					//System.out.println("yass variable declaration");
 					try {
 						//initialized variable
 						if(classification.get(i+2).matches("Variable Assignment")) {		//if 2nd word after the I HAS A is ITZ
@@ -456,159 +456,171 @@ public class MainStage {
 			}
 		}
 	}
+	private boolean isComment(String str) {													//checker if comment
+		//check if string is a comment
+		if(str.matches("^(BTW)$") || str.matches("^(OBTW)$") || str.matches("^(TLDR)$")){
+			return true;
+		}else return false;
+	}
+	private boolean isInvalidIO(String str) {												//checker for invalid IO syntax
+		//check if I/O keyword have no varident or literal after the keyword
+		if(str.matches("^(VISIBLE)$") ||str.matches("^(GIMMEH)$")) {
+			return true;
+		}else return false;
+	}
+	private void setLexemeTable() {															//function for adding elements to Lexeme TableView
+		//printing of lexemes lexemeTable
+		ObservableList<Lexeme> lexTable = FXCollections.observableArrayList();
+		//System.out.println("\n============LEXEMES============ n:" + lexemes.size());
+		for(int i=0;i<lexemes.size();i++) {
+			lexTable.add(new Lexeme(lexemes.get(i), classification.get(i)));
+			//System.out.println(lexemes.get(i) + " :: " + classification.get(i));
+		}
+		lexemeTable.setItems(lexTable);		//add to tableview content	
+		System.out.println("lexeme count: "+lexemes.size());
+	}
+	private void setSourceCode(String program) {											//function for adding elements to source code text area
+		code.setText(program);
+	}
+	private void setTerminal(String program) {												//function for adding elements to execute text area
+		output.setText(program);
+		System.out.println(program);
+	}
+	private boolean isOneWord(String str) {
+		if(!str.contains(" ")) return true;
+		else return false;
+	}
+	private String removeTabs(String str) {
+		if(str.contains("\\x{09}") || str.contains("\t")) {									//remove tabs from the program
+			str = str.replaceAll("[\\x{09}\t]+", "");
+		}
+		return str;
+	}
+	private boolean isStringEmpty(String s) {												//checker if string = ""
+		if(s.matches("")== true) return true;
+		else return false;
+	}
+	private void clearExecuteBtn() {														//function for clearing execute button
+		//clear for next click
+		identifiers.clear();
+		values.clear();
+		for ( int i = 0; i<symbolTable.getItems().size(); i++) {
+			symbolTable.getItems().clear(); 
+	    } 
+	}
+	private void clearFileBtn() {
+		//clear incase of next click
+		lexemes.clear();
+		classification.clear();
+		output.clear();
+		code.clear();
+		identifiers.clear();
+		values.clear();
+		for ( int i = 0; i<lexemeTable.getItems().size(); i++) {
+			lexemeTable.getItems().clear(); 
+	    } 
+		for ( int i = 0; i<symbolTable.getItems().size(); i++) {
+			symbolTable.getItems().clear(); 
+	    } 
+	}
+	private void setSymbolTable() {
+		if(identifiers.size()!=0) {
+			for(int i=0;i<identifiers.size();i++) {
+				System.out.println(identifiers.get(i) + " = "+ values.get(i));
+			}
+			ObservableList<Identifier> symTable = FXCollections.observableArrayList();
+			for(int i=0;i<identifiers.size();i++) {
+				symTable.add(new Identifier(identifiers.get(i), values.get(i).toString()));
+			}
+			symbolTable.setItems(symTable);													//add to tableview content	
+			System.out.println("identifier count: "+identifiers.size());
+		}
+	}
+	
 	private void addMouseEventHandler() {
-		file_btn.setOnMouseClicked(new EventHandler<MouseEvent>(){						//eventhandler for file chooser
+		file_btn.setOnMouseClicked(new EventHandler<MouseEvent>(){							//eventhandler for file chooser
 			public void handle(MouseEvent e) {
-				int line_number = 0;													//current line number
+				int line_number = 0;														//current line number
 				hasSyntaxError = false;
+				clearFileBtn();																//clear
 				
-				//clear incase of next click
-				lexemes.clear();
-				classification.clear();
-				output.clear();
-				code.clear();
-				identifiers.clear();
-				values.clear();
-				
-				for ( int i = 0; i<lexemeTable.getItems().size(); i++) {
-					lexemeTable.getItems().clear(); 
-			    } 
-				for ( int i = 0; i<symbolTable.getItems().size(); i++) {
-					symbolTable.getItems().clear(); 
-			    } 
-					
 				//file reading implementation
 				File file = fileChooser.showOpenDialog(stage);
-				
 				try {
 					if(file != null) {		//if file not empty
 						LinkedHashMap<String,String> map = new LinkedHashMap();
 						BufferedReader br = new BufferedReader(new FileReader(file));
 						String program = "", out = "", str;
 						
-						while((str=br.readLine())!=null) {										//read each line of file
-							line_number++;														//increment line_number for every line found
-							program = program + str + "\n";										//for printing the source code
+						while((str=br.readLine())!=null) {											//read each line of file
+							line_number++;															//increment line_number for every line found
+							program = program + str + "\n";											//for printing the source code
 							
-							if(str.contains("\\x{09}") || str.contains("\t")) {					//remove tabs from the program
-								str = str.replaceAll("[\\x{09}\t]+", "");
-							}
+							str = removeTabs(str);													//remove tabs from the string
 							System.out.println("reading line("+line_number+"):"+str);
-							
-							if(str.matches("^(BTW)$") || 
-								str.matches("^(OBTW)$") ||
-								str.matches("^(TLDR)$")) continue;								//ignore comment/s
-							if(str.matches("^(VISIBLE)$") ||
-								str.matches("^(GIMMEH)$")) {
-								//these keywords require a variable on the next word/token
-								hasSyntaxError = true;
-							}
-							
-							if(!str.contains(" ")) {											//if string can't be split (one word line)
-								lexemeChecker(str);
-							}else {
-								String[] words = str.split(" ");								//split each word by space delimiter  //TOKENIZE
+							if(isComment(str)) continue;											//ignore comment/s
+							if(isInvalidIO(str)) hasSyntaxError = true;								//check if valid IO statement
+							if(isOneWord(str)) lexemeChecker(str);									//if string can't be split (one word-line)
+							else {
+								String[] words = str.split(" ");									//split each word by space delimiter  //TOKENIZE
 								String s = new String();
-								if(words.length != 0 && 
-								(words[0].matches("^(BTW)$") || 
-								words[0].matches("^(OBTW)$") ||
-								words[0].matches("^(TLDR)$"))) continue;									//ignore comments
 								
-								if(words.length != 0) s = words[0];
-								s = s.replaceAll("[^a-zA-Z0-9\"]", "");
+								if(words.length != 0 && isComment(words[0])) continue;				//ignore comments
+								if(words.length != 0) s = words[0];									//assign the first word to string s
 								
-								for(int i=1;i<(words.length);i++) {
-									System.out.println("checking word:" + words[i]);
-									try{
-										s = lexemeChecker(s);												//check token if lexeme
-									}
-									catch(Exception e1) {
+								for(int i=1;i<(words.length);i++) {									//start from the 2nd word
+									//System.out.println("checking word:" + words[i]);
+									try{ s = lexemeChecker(s); }									//check token if lexeme
+									catch(Exception e1) {											//if error occur during pattern checking, syntax error
 										hasSyntaxError = true;
 									}
-									
-									if(words.length != 1) {													//add next word to the string to compare
-										if(s == "") {
-											s = words[i];
-										}else {
-											s = s + " " + words[i];
-										}
+									if(words.length != 1) {											//add next word to the string to compare
+										if(isStringEmpty(s)) s = words[i];							//set new s
+										else s = s + " " + words[i];								//append the next word to current s
 									}
-									if(i == (words.length-1)) {
-										s = lexemeChecker(s);												//check last lexeme
-										if(s.matches("")== false) {											//if there is an unclassified token left on string
-											hasSyntaxError = true;
-										}
+									if(i == (words.length-1)) {										//check if last lexeme
+										s = lexemeChecker(s);										//tokenize last laxeme			
+										if(!isStringEmpty(s)) hasSyntaxError = true;				//if there is an unclassified token left on string
 									}
 									System.out.println("current s:"+s);		
 								}
 								System.out.println();
 							}
 							//after each line check for error
-							if(str.matches("") == false) syntaxChecker();
+							//if(isStringEmpty(str)) syntaxChecker();
+							if(!isStringEmpty(str)) syntaxChecker();
+							
+							//if there is a syntax error, print error prompt
 							if(hasSyntaxError) {
 								out = "$lci "+file.getName()+"\n";
 								out += "[ ! ] Error in line "+line_number;
-								System.out.println(out);
-								output.setText(out);														//print error to gui
-								break;																		//terminate if there's an error
+								setTerminal(out);													//print error to interface
+								break;																//terminate reading file if there's an error
 							}
 						}
 						//check if file is delimited by a KTHXBYE
-						if(lexemes.get(lexemes.size()-1).matches("KTHXBYE") == false) { 					//file must be delimited by a closing KTHXBYE
+						if(lexemes.get(lexemes.size()-1).matches("KTHXBYE") == false) { 			//file must be delimited by a closing KTHXBYE
 							hasSyntaxError = true; 
 						}
-						if(!hasSyntaxError) {			//print only if no error
-							code.setText(program);
-							//printing of lexemes lexemeTable
-							ObservableList<Lexeme> lexTable = FXCollections.observableArrayList();
-
-//							System.out.println("\n============LEXEMES============ n:" + lexemes.size());
-							for(int i=0;i<lexemes.size();i++) {
-								lexTable.add(new Lexeme(lexemes.get(i), classification.get(i)));
-								//System.out.println(lexemes.get(i) + " :: " + classification.get(i));
-							}
-							lexemeTable.setItems(lexTable);													//add to tableview content	
-							System.out.println("lexeme count: "+lexemes.size());
+						if(!hasSyntaxError) {														//if no error, update interface
+							setSourceCode(program);
+							setLexemeTable();
 						}else {
 							out = "$lci "+file.getName()+"\n";
 							out += "[ ! ] Error in line "+line_number;
-							System.out.println(out);
-							output.setText(out);															//print error to gui
+							setTerminal(out);														//print error to interface
 						}
-					}else {
-						//print error if no file is selected
-						System.out.println("[!] No file selected.");
-					}
-					
+					}else System.out.println("[!] No file selected.");								//print error if no file is selected
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
 			}
 		});
-		execute_btn.setOnMouseClicked(new EventHandler<MouseEvent>(){						//eventhandler for execute button
+		execute_btn.setOnMouseClicked(new EventHandler<MouseEvent>(){								//eventhandler for execute button
 			public void handle(MouseEvent e) {
-				//clear for next click
-				identifiers.clear();
-				values.clear();
-				for ( int i = 0; i<symbolTable.getItems().size(); i++) {
-					symbolTable.getItems().clear(); 
-			    } 
-				
-				variableChecker();															//check variable declarations/initializations
-				for(int i=0;i<identifiers.size();i++) {
-					System.out.println(identifiers.get(i) + " = "+ values.get(i));
-				}
-				
-				if(identifiers.size()!=0) {
-					ObservableList<Identifier> symTable = FXCollections.observableArrayList();
-					for(int i=0;i<identifiers.size();i++) {
-						symTable.add(new Identifier(identifiers.get(i), values.get(i).toString()));
-					}
-					symbolTable.setItems(symTable);													//add to tableview content	
-					System.out.println("identifier count: "+identifiers.size());
-				}
-				
-				
+				clearExecuteBtn();																	//clear
+				identifierChecker();																//check variable declarations/initializations
+				setSymbolTable();																	//update symbol table interface
 			}
 		});
 	}
