@@ -1,0 +1,76 @@
+HAI :: Code Delimiter
+I HAS A :: Variable Declaration
+V1 :: Variable Identifier
+I HAS A :: Variable Declaration
+V2 :: Variable Identifier
+I HAS A :: Variable Declaration
+CHOICE :: Variable Identifier
+VISIBLE :: Output Keyword
+" :: String Delimiter
+VALUE1 :: YARN Literal
+" :: String Delimiter
+GIMMEH :: Input Keyword
+V1 :: Variable Identifier
+VISIBLE :: Output Keyword
+" :: String Delimiter
+VALUE2 :: YARN Literal
+" :: String Delimiter
+GIMMEH :: Input Keyword
+V2 :: Variable Identifier
+VISIBLE :: Output Keyword
+" :: String Delimiter
+Choose Operation? + - * / :: YARN Literal
+" :: String Delimiter
+GIMMEH :: Input Keyword
+CHOICE :: Variable Identifier
+CHOICE :: Variable Identifier
+, :: Soft-Line/Command Break
+WTF? :: Switch-Case Delimiter
+OMG :: OMG Keyword
+" :: String Delimiter
++ :: YARN Literal
+" :: String Delimiter
+VISIBLE :: Output Keyword
+SUM OF :: Arithmetic Operation Keyword
+V1 :: Variable Identifier
+AN :: AN Keyword
+V2 :: Variable Identifier
+GTFO :: GTFO Keyword
+OMG :: OMG Keyword
+" :: String Delimiter
+- :: YARN Literal
+" :: String Delimiter
+VISIBLE :: Output Keyword
+DIFF OF :: Arithmetic Operation Keyword
+V1 :: Variable Identifier
+AN :: AN Keyword
+V2 :: Variable Identifier
+GTFO :: GTFO Keyword
+OMG :: OMG Keyword
+" :: String Delimiter
+* :: YARN Literal
+" :: String Delimiter
+VISIBLE :: Output Keyword
+PRODUKT OF :: Arithmetic Operation Keyword
+V1 :: Variable Identifier
+AN :: AN Keyword
+V2 :: Variable Identifier
+GTFO :: GTFO Keyword
+OMG :: OMG Keyword
+" :: String Delimiter
+/ :: YARN Literal
+" :: String Delimiter
+VISIBLE :: Output Keyword
+QUOSHUNT OF :: Arithmetic Operation Keyword
+V1 :: Variable Identifier
+AN :: AN Keyword
+V2 :: Variable Identifier
+GTFO :: GTFO Keyword
+OMGWTF :: OMGWTF Keyword
+VISIBLE :: Output Keyword
+" :: String Delimiter
+CHOOSE SOME OPERATION :: YARN Literal
+" :: String Delimiter
+OIC :: If-Then Delimiter
+KTHXBYE :: Code Delimiter
+lexeme count: 75
