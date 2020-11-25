@@ -595,6 +595,26 @@ public class MainStage {
 		}
 	}
 	
+//	private void SyntaxChecker() {															//function for other syntax checking
+//		//check if every variable declaration has a declared value
+//		for(int i=0;i<lexemes.size();i++) {
+//			if(lexemes.get(i).matches("ITZ")) {
+//				try{
+//					//check if next lexeme is a literal
+//					if(!classification.get(i+1).matches("Literal")){
+//						System.out.println(classification.get(i+1));
+//						//!classification.get(i+1).matches("String Delimiter")
+//						hasSyntaxError = true;
+//					}
+//				}catch(Exception e){
+//					hasSyntaxError = true;
+//				}
+//			}
+//		}
+//		
+//		
+//	}
+	
 	private void addMouseEventHandler() {
 		file_btn.setOnMouseClicked(new EventHandler<MouseEvent>(){							//eventhandler for file chooser
 			public void handle(MouseEvent e) {
@@ -661,6 +681,8 @@ public class MainStage {
 							}
 							//check if file is started with HAI
 							if(!isStringEmpty(str)) hasHAI();
+							//syntax checker for every line
+							//SyntaxChecker();
 							
 							//if there is a syntax error, print error prompt
 							if(hasSyntaxError) {

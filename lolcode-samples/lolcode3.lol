@@ -1,8 +1,8 @@
 HAI
 	BTW this is a comment
 	I HAS A var ITZ 12.5
-	VISIBLE "noot noot" var
+	VISIBLE "  hello  " var
 	I HAS A I_I
-	I HAS A varr ITZ 124
+	I HAS A varr ITZ
 	I HAS A var3
 KTHXBYE
