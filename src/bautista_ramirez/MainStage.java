@@ -111,6 +111,8 @@ public class MainStage {
 		valCol.setMinWidth(150);
 		symbolTable.getColumns().addAll(idCol,valCol);
 		
+		fileChooser.setInitialDirectory(new File("./"));
+		
 		this.code.setLayoutX(MainStage.WINDOW_WIDTH*0.01);
 		this.code.setLayoutY(MainStage.WINDOW_HEIGHT*0.10);
 		this.code.setMaxWidth(WINDOW_WIDTH*0.36);
@@ -486,20 +488,19 @@ public class MainStage {
 			
 	}
 	public void identifierChecker() {														//function for identifying variables
-		if(classification.contains("Variable Identifier")) {
-			System.out.println("lexemes has variable");
+		if (classification.contains("Variable Identifier")) {
+			System.out.println("lexemes has Variable");
 			for(int i=0;i<lexemes.size()-1;i++) {
 				//check for variable declaration/s
-//				System.out.println("current lexeme:"+lexemes.get(i));
-//				System.out.println("next lexeme:"+lexemes.get(i+1));
+				
 				if(classification.get(i).matches("Variable Declaration")) {					//if I HAS A
-					//System.out.println("yass variable declaration");
+				
 					try {
 						//initialized variable
-						if(classification.get(i+2).matches("Variable Assignment")) {		//if 2nd word after the I HAS A is ITZ
+						if (classification.get(i+2).matches("Variable Assignment")) {		//if 2nd word after the I HAS A is ITZ
 							identifiers.add(lexemes.get(i+1));								//add the variable to the list of identifiers
 							values.add(lexemes.get(i+3));									//add the value of the variable to the list of values
-						}else {
+						} else {
 							//uninitialized variable
 							identifiers.add(lexemes.get(i+1));								//add the variable to the list of identifiers
 							values.add("NOOB");												//NOOB value for uninitialized variables
@@ -511,8 +512,35 @@ public class MainStage {
 				}
 				System.out.println();
 			}
+		}		
+		if (classification.contains("Output Keyword")) {
+			System.out.println("lexemes has VISIBLE");
+			String itValue = "";
+			boolean visitedVisible = false;
+			for(int i=0;i<lexemes.size()-1;i++) {
+				if (visitedVisible) { // has already encountered VISIBLE lexeme
+					if (classification.get(i).matches("String Delimiter")) continue; 		// ignore quotes
+					else if (classification.get(i).matches("Literal"))						// concatenate string to value of IT
+						itValue = itValue.concat(lexemes.get(i));
+					
+					else if (classification.get(i).matches("Variable Identifier")) {
+						for (int j=0; j<identifiers.size(); j++) {							// look for varident in identifiers list
+							if (lexemes.get(i).equals(identifiers.get(j))) 					
+								itValue = itValue.concat(values.get(j));					// concatenate value of varident to value of IT
+						}
+					}
+					else break;
+				}
+				if (classification.get(i).matches("Output Keyword")) { 						// encounter VISIBLE lexeme
+					visitedVisible = true;													// set visited flag
+				}
+			}
+			
+			identifiers.add("IT");															// add IT and its value to identifiers list
+			values.add(itValue);
 		}
 	}
+
 	private boolean isComment(String str) {													//checker if comment
 		//check if string is a comment
 		if(str.matches("^(OBTW)$")) hasMultiLineComment = true;								//flag for multi-line comment
@@ -590,6 +618,7 @@ public class MainStage {
 			for(int i=0;i<identifiers.size();i++) {
 				symTable.add(new Identifier(identifiers.get(i), values.get(i).toString()));
 			}
+			symTable = symTable.sorted();													// SORTING ONLY WORKS SOMETIMES??????????
 			symbolTable.setItems(symTable);													//add to tableview content	
 			System.out.println("identifier count: "+identifiers.size());
 		}
