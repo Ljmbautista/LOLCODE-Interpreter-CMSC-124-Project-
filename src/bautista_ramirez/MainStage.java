@@ -8,10 +8,12 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Stack;
 import java.util.TreeMap;
 
 import bautista_ramirez.MainStage;
@@ -475,15 +477,15 @@ public class MainStage {
 			//System.out.println(lexemes.get(i) + " :: " + classification.get(i));
 		}
 		lexemeTable.setItems(lexTable);		//add to tableview content	
-		System.out.println("lexeme count: "+lexemes.size());
-		
-		System.out.println("lexemebyline: "+lexemesByLine.size());
-		for (ArrayList<String> arr : lexemesByLine) {
-			System.out.println(arr.toString());
-		}
-		for (ArrayList<String> arr : classificationByLine) {
-			System.out.println(arr.toString());
-		}
+//		System.out.println("lexeme count: "+lexemes.size());
+//		
+//		System.out.println("lexemebyline: "+lexemesByLine.size());
+//		for (ArrayList<String> arr : lexemesByLine) {
+//			System.out.println(arr.toString());
+//		}
+//		for (ArrayList<String> arr : classificationByLine) {
+//			System.out.println(arr.toString());
+//		}
 	}	
 	private void setSourceCode(String program) {											//function for adding elements to source code text area
 		code.setText(program);
@@ -561,6 +563,110 @@ public class MainStage {
 //			}
 //		}
 //	}
+	private void evaluateArithmetic() {
+		Stack<Number> stack = new Stack<Number>();
+		
+		for(int i=0;i<lexemesByLine.size();i++) {																//for every line
+			if(classificationByLine.get(i).get(0).equals("Arithmetic Operation Keyword")) {						//if first token is a arithmetic operator
+				ArrayList<String> line = (ArrayList<String>) lexemesByLine.get(i).clone();						//get the reverse of each line
+				Collections.reverse(line);
+				ArrayList<String> line_class = (ArrayList<String>) classificationByLine.get(i).clone();			//get the reverse of each line_class
+				Collections.reverse(line_class);
+				
+				for(int j=0;j<lexemesByLine.get(i).size();j++) {												//for every token of a line
+					if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {												//float/numbar
+						stack.push(Float.parseFloat(line.get(j)));
+					}else if(line.get(j).matches("^(-?\\d+)$")) {												//integer/numbr
+						stack.push(Integer.parseInt(line.get(j)));
+					}else if(line_class.get(j).equals("Arithmetic Operation Keyword")){							//if operator
+						boolean isFloat = false;
+						Number op1 = stack.pop();
+						Number op2 = stack.pop();
+						
+						if(op1 instanceof Float || op2 instanceof Float) isFloat = true;						//check if float
+						if(isFloat) {																			//if isFloat, the result must also be float/numbar
+							if(line.get(j).matches("^(SUM OF)$")) {					//addition
+								stack.push(op1.floatValue() + op2.floatValue());
+							}
+							else if(line.get(j).matches("^(DIFF OF)$")) {			//subtraction
+								stack.push(op1.floatValue() - op2.floatValue());
+							}
+							else if(line.get(j).matches("^(PRODUKT OF)$")) {		//multiplication
+								stack.push(op1.floatValue() * op2.floatValue());
+							}
+							else if(line.get(j).matches("^(QUOSHUNT OF)$")) {		//division
+								stack.push(op1.floatValue() / op2.floatValue());
+							}
+							else if(line.get(j).matches("^(MOD OF)$")) {			//mod division
+								stack.push(op1.floatValue() % op2.floatValue());
+							}
+							else if(line.get(j).matches("^(BIGGR OF)$")) {			//bigger
+								if(op1.floatValue() >= op2.floatValue()) {
+									stack.push(op1.floatValue());
+								}else stack.push(op2.floatValue());
+							}
+							else if(line.get(j).matches("^(SMALLR OF)$")) {			//smaller
+								if(op1.floatValue() <= op2.floatValue()) {
+									stack.push(op1.floatValue());
+								}else stack.push(op2.floatValue());
+							}
+						}else {	//if !isFloat, the result must be an integer/numbr
+							if(line.get(j).matches("^(SUM OF)$")) {					//addition
+								stack.push(op1.intValue() + op2.intValue());
+							}
+							else if(line.get(j).matches("^(DIFF OF)$")) {			//subtraction
+								stack.push(op1.intValue() - op2.intValue());
+							}
+							else if(line.get(j).matches("^(PRODUKT OF)$")) {		//multiplication
+								stack.push(op1.intValue() * op2.intValue());
+							}
+							else if(line.get(j).matches("^(QUOSHUNT OF)$")) {		//division
+								stack.push(op1.intValue() / op2.intValue());
+							}
+							else if(line.get(j).matches("^(MOD OF)$")) {			//mod division
+								stack.push(op1.intValue() % op2.intValue());
+							}
+							else if(line.get(j).matches("^(BIGGR OF)$")) {			//bigger
+								if(op1.intValue() >= op2.intValue()) {
+									stack.push(op1.intValue());
+								}else stack.push(op2.intValue());
+							}
+							else if(line.get(j).matches("^(SMALLR OF)$")) {			//smaller
+								if(op1.intValue() <= op2.intValue()) {
+									stack.push(op1.intValue());
+								}else stack.push(op2.intValue());
+							}
+						}
+					}else if(identifiers.contains(line.get(j))) {												//if varident
+						for(int k=0;k<identifiers.size();k++) {
+							if(identifiers.get(k).equals(line.get(j))) {
+								if(values.get(k).matches("^(-?\\d*\\.\\d+)$")) {			//float/numbar
+									stack.push(Float.parseFloat(values.get(k)));
+								}else if(values.get(k).matches("^(-?\\d+)$")) {				//integer/numbr
+									stack.push(Integer.parseInt(values.get(k)));
+								}
+							}
+						}
+					}
+				}
+				Number result = stack.pop();														//the last item on the stack is the result
+				System.out.print(lexemesByLine.get(i).toString() + " ");
+				System.out.println("result = "+result);
+				stack.clear();		
+				/* 	UPDATE SYMBOL TABLE HERE
+				 * 	IT = result
+				 * 
+				 * 
+				 * 
+				 */
+				
+//				System.out.println("symbolTable: "+identifiers.size());
+//				for(int k=0;k<identifiers.size();k++) {
+//					System.out.println(identifiers.get(k) + " = "+ values.get(k));
+//				}
+			}
+		}
+	}
 	
 	private void runProgram() {
 		boolean varDecCheck = false,
@@ -646,6 +752,7 @@ public class MainStage {
 			}
 			// =====================================
 		}
+		evaluateArithmetic();
 	}
 	
 	private void addMouseEventHandler() {
