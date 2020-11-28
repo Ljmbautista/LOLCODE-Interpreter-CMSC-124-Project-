@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -111,7 +112,7 @@ public class MainStage {
 		valCol.setMinWidth(150);
 		symbolTable.getColumns().addAll(idCol,valCol);
 		
-		fileChooser.setInitialDirectory(new File("./"));
+		fileChooser.setInitialDirectory(new File("./lolcode-samples/"));
 		
 		this.code.setLayoutX(MainStage.WINDOW_WIDTH*0.01);
 		this.code.setLayoutY(MainStage.WINDOW_HEIGHT*0.10);
@@ -127,11 +128,10 @@ public class MainStage {
 		this.stage.setTitle("LOLCODE INTERPRETER");
 		this.stage.setScene(this.scene);
 		this.stage.show();
-	}
-	
+	}	
 	public String lexemeChecker(String s) {
 		boolean containsComma = false;
-		System.out.println("checking s:"+s);
+//		System.out.println("checking s:"+s);
 		//check if there is comma on the current string
 		if(s.matches("^([a-zA-Z]+,)$")) {						
 			containsComma = true;
@@ -455,8 +455,7 @@ public class MainStage {
 			lexemes.add(s);
 			classification.add("IF U SAY SO Keyword");
 			s = "";
-		}
-//		
+		}	
 //		else if(s.matches("^(.*)$") && 
 //				(classification.get(classification.size()-1) == "BTW Keyword" ||
 //				classification.get(classification.size()-1) == "Comment")
@@ -464,15 +463,13 @@ public class MainStage {
 //			lexemes.add(s);
 //			classification.add("Comment");
 //			//s = "";
-//		}
-		
+//		}		
 		//if the string has a comma
 		if(containsComma) {
 			lexemeChecker(",");
 		}
 		return s;
-	}
-	
+	}	
 	public void hasHAI() {																	//function for checking if has opening code delimiter
 		//the code must be start with HAI
 		if(lexemes.size() != 0 && lexemes.get(0).matches("HAI") == false) 
@@ -486,74 +483,52 @@ public class MainStage {
 			System.out.println("pasok");
 		}
 			
+	}	
+	private void addLiteralSymbol(String identifier, String value) {
+		identifiers.add(identifier);
+		values.add(value);
 	}
-	public void identifierChecker() {														//function for identifying variables
-		if (classification.contains("Variable Identifier")) {
-			System.out.println("lexemes has Variable");
-			for(int i=0;i<lexemes.size()-1;i++) {
-				//check for variable declaration/s
+	private void VISIBLEChecker(int elem) {
+		System.out.println("lexemes has VISIBLE");
+		String itValue = "";
+		boolean visitedVisible = false;
+		for(int i=0;i<lexemes.size()-1;i++) {
+			if (visitedVisible) { // has already encountered VISIBLE lexeme
+				if (classification.get(i).matches("String Delimiter")) continue; 		// ignore quotes
+				else if (classification.get(i).matches("Literal"))						// concatenate string to value of IT
+					itValue = itValue.concat(lexemes.get(i));
 				
-				if(classification.get(i).matches("Variable Declaration")) {					//if I HAS A
-				
-					try {
-						//initialized variable
-						if (classification.get(i+2).matches("Variable Assignment")) {		//if 2nd word after the I HAS A is ITZ
-							identifiers.add(lexemes.get(i+1));								//add the variable to the list of identifiers
-							values.add(lexemes.get(i+3));									//add the value of the variable to the list of values
-						} else {
-							//uninitialized variable
-							identifiers.add(lexemes.get(i+1));								//add the variable to the list of identifiers
-							values.add("NOOB");												//NOOB value for uninitialized variables
-						}
-					}
-					catch(Exception e) {													//if variable is not a declaration/initialization skip
-						continue;
+				else if (classification.get(i).matches("Variable Identifier")) {
+					for (int j=0; j<identifiers.size(); j++) {							// look for varident in identifiers list
+						if (lexemes.get(i).equals(identifiers.get(j))) 					
+							itValue = itValue.concat(values.get(j));					// concatenate value of varident to value of IT
 					}
 				}
-				System.out.println();
+				else break;
 			}
-		}		
-		if (classification.contains("Output Keyword")) {
-			System.out.println("lexemes has VISIBLE");
-			String itValue = "";
-			boolean visitedVisible = false;
-			for(int i=0;i<lexemes.size()-1;i++) {
-				if (visitedVisible) { // has already encountered VISIBLE lexeme
-					if (classification.get(i).matches("String Delimiter")) continue; 		// ignore quotes
-					else if (classification.get(i).matches("Literal"))						// concatenate string to value of IT
-						itValue = itValue.concat(lexemes.get(i));
-					
-					else if (classification.get(i).matches("Variable Identifier")) {
-						for (int j=0; j<identifiers.size(); j++) {							// look for varident in identifiers list
-							if (lexemes.get(i).equals(identifiers.get(j))) 					
-								itValue = itValue.concat(values.get(j));					// concatenate value of varident to value of IT
-						}
-					}
-					else break;
-				}
-				if (classification.get(i).matches("Output Keyword")) { 						// encounter VISIBLE lexeme
-					visitedVisible = true;													// set visited flag
-				}
+			if (classification.get(i).matches("Output Keyword")) { 						// encounter VISIBLE lexeme
+				visitedVisible = true;													// set visited flag
 			}
-			
-			identifiers.add("IT");															// add IT and its value to identifiers list
-			values.add(itValue);
 		}
+		
+		setTerminal(itValue);
+		
+		identifiers.add("IT");															// add IT and its value to identifiers list
+		values.add(itValue);
 	}
-
 	private boolean isComment(String str) {													//checker if comment
 		//check if string is a comment
 		if(str.matches("^(OBTW)$")) hasMultiLineComment = true;								//flag for multi-line comment
 		if(str.matches("^(BTW)$") || str.matches("^(OBTW)$") || str.matches("^(TLDR)$")){
 			return true;
 		}else return false;
-	}
+	}	
 	private boolean isInvalidIO(String str) {												//checker for invalid IO syntax
 		//check if I/O keyword have no varident or literal after the keyword
 		if(str.matches("^(VISIBLE)$") ||str.matches("^(GIMMEH)$")) {
 			return true;
 		}else return false;
-	}
+	}	
 	private void setLexemeTable() {															//function for adding elements to Lexeme TableView
 		//printing of lexemes lexemeTable
 		ObservableList<Lexeme> lexTable = FXCollections.observableArrayList();
@@ -564,28 +539,28 @@ public class MainStage {
 		}
 		lexemeTable.setItems(lexTable);		//add to tableview content	
 		System.out.println("lexeme count: "+lexemes.size());
-	}
+	}	
 	private void setSourceCode(String program) {											//function for adding elements to source code text area
 		code.setText(program);
-	}
-	private void setTerminal(String program) {												//function for adding elements to execute text area
-		output.setText(program);
-		System.out.println(program);
-	}
+	}	
+	private void setTerminal(String out) {												//function for adding elements to execute text area
+		output.setText(out);
+		System.out.println(out);
+	}	
 	private boolean isOneWord(String str) {
 		if(!str.contains(" ")) return true;
 		else return false;
-	}
+	}	
 	private String removeTabs(String str) {
 		if(str.contains("\\x{09}") || str.contains("\t")) {									//remove tabs from the program
 			str = str.replaceAll("[\\x{09}\t]+", "");
 		}
 		return str;
-	}
+	}	
 	private boolean isStringEmpty(String s) {												//checker if string = ""
 		if(s.matches("")== true) return true;
 		else return false;
-	}
+	}	
 	private void clearExecuteBtn() {														//function for clearing execute button
 		//clear for next click
 		identifiers.clear();
@@ -593,7 +568,7 @@ public class MainStage {
 		for ( int i = 0; i<symbolTable.getItems().size(); i++) {
 			symbolTable.getItems().clear(); 
 	    } 
-	}
+	}	
 	private void clearFileBtn() {
 		//clear incase of next click
 		lexemes.clear();
@@ -618,7 +593,7 @@ public class MainStage {
 			for(int i=0;i<identifiers.size();i++) {
 				symTable.add(new Identifier(identifiers.get(i), values.get(i).toString()));
 			}
-			symTable = symTable.sorted();													// SORTING ONLY WORKS SOMETIMES??????????
+//			symTable = symTable.sorted();													// SORTING ONLY WORKS SOMETIMES??????????
 			symbolTable.setItems(symTable);													//add to tableview content	
 			System.out.println("identifier count: "+identifiers.size());
 		}
@@ -640,9 +615,86 @@ public class MainStage {
 //				}
 //			}
 //		}
-//		
-//		
 //	}
+	
+	private void runProgram() {
+		boolean varDecCheck = false,
+				varIdentCheck = false,
+				varAssCheck = false,
+				outIdentCheck = false,
+				strDelCheck = false;
+		String output = "";
+		
+		for (int lex=0; lex<lexemeTable.getItems().size(); lex++) {		
+//			System.out.println("Output: "+output);
+			// ============== I HAS A ==============	
+			if (classification.get(lex).equals("Variable Declaration")) {
+//				System.out.println("[Variable Declaration]");
+				varDecCheck = true;
+				continue;
+			}
+			if (varDecCheck) {
+				if (classification.get(lex).equals("Variable Identifier")) {
+//					System.out.println("[Variable Identifier]");
+					varIdentCheck = true;
+					varDecCheck = false;
+				}
+				// If next lexeme is not ITZ, var is NOOB
+				if (!classification.get(lex+1).equals("Variable Assignment") ) {
+//					System.out.println("[NOOB Variable]");
+//					System.out.println("Adding: "+lexemes.get(lex-1));
+					addLiteralSymbol(lexemes.get(lex), "NOOB");
+					varIdentCheck = false;
+					continue;
+				}
+			}
+			if (varIdentCheck) {
+				if (classification.get(lex).equals("Variable Assignment")) {
+//					System.out.println("[Variable Assignment]");
+					varAssCheck = true;
+				}
+			}
+			if (varAssCheck) {
+				if (classification.get(lex).equals("Literal")) {
+//					System.out.println("[Literal]");
+					addLiteralSymbol(lexemes.get(lex-2), lexemes.get(lex));	
+						// get varident and its value from lexeme table
+					varAssCheck = false;
+					continue;					
+				}
+			}
+			// ======================================
+			
+			// ============= VISIBLE ==============
+			if (classification.get(lex).equals("Output Keyword")){
+				outIdentCheck = true;
+				continue;
+			}
+			if (outIdentCheck) {
+				if (classification.get(lex).equals("Variable Identifier")) {
+					output = output + values.get(identifiers.indexOf(lexemes.get(lex))).toString();
+				}
+				else if (classification.get(lex).equals("String Delimiter")) {
+					if (!strDelCheck) {
+						strDelCheck = true;
+					}
+					else strDelCheck = false;
+				}
+				else if (classification.get(lex).equals("Literal")) {
+					output = output + lexemes.get(lex).toString();
+				}
+				else {
+					identifiers.add("IT");
+					values.add(output);
+					outIdentCheck = false;
+					setTerminal(output);
+					output = "";
+				}
+				continue;
+			}
+			// =====================================
+		}
+	}
 	
 	private void addMouseEventHandler() {
 		file_btn.setOnMouseClicked(new EventHandler<MouseEvent>(){							//eventhandler for file chooser
@@ -704,7 +756,7 @@ public class MainStage {
 										s = lexemeChecker(s);										//tokenize last laxeme			
 										if(!isStringEmpty(s)) hasSyntaxError = true;				//if there is an unclassified token left on string
 									}
-									System.out.println("current s:"+s);		
+//									System.out.println("current s:"+s);		
 								}
 								System.out.println();
 							}
@@ -741,7 +793,7 @@ public class MainStage {
 		execute_btn.setOnMouseClicked(new EventHandler<MouseEvent>(){								//eventhandler for execute button
 			public void handle(MouseEvent e) {
 				clearExecuteBtn();																	//clear
-				identifierChecker();																//check variable declarations/initializations
+				runProgram();																//check variable declarations/initializations
 				setSymbolTable();																	//update symbol table interface
 			}
 		});
