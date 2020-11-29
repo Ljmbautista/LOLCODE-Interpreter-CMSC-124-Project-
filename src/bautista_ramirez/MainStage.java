@@ -958,9 +958,7 @@ public class MainStage {
 	
 	private String evaluateComparison(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
 		String result = "";
-		System.out.println("\nline: "+ lexemeLine.toString());
 		Stack<Number> stack = new Stack<Number>();
-		Stack<Boolean> s = new Stack<Boolean>();
 		
 		ArrayList<String> line = (ArrayList<String>) lexemeLine.clone();								//get the reverse of each line
 		Collections.reverse(line);
@@ -968,7 +966,6 @@ public class MainStage {
 		Collections.reverse(line_class);
 		
 		for(int j=0;j<line.size();j++) {
-			System.out.println("token: "+ line.get(j));
 			if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {												//float/numbar
 				stack.push(Float.parseFloat(line.get(j)));
 			}else if(line.get(j).matches("^(-?\\d+)$")) {												//integer/numbr
@@ -1060,7 +1057,7 @@ public class MainStage {
 				
 			}//System.out.println("stack: " + stack);
 		}
-		//System.out.println("result = " + result);
+		
 		if(stack.peek().equals(1)) {
 			result = "WIN";
 		}else result = "FAIL";
@@ -1073,6 +1070,9 @@ public class MainStage {
 				break;
 			}
 		}
+		System.out.print(lexemeLine.toString());
+		System.out.println("result = " + result);
+		
 		return result;
 	}
 	
@@ -1105,7 +1105,7 @@ public class MainStage {
 			//if line has comparison
 			if(line_class.contains("Comparison Operation Keyword")) {
 				IT = evaluateComparison(line,line_class);
-				System.out.println("IT = " + IT);
+				//System.out.println("IT = " + IT);
 			}
 			//if line has var dec/init
 			
