@@ -47,6 +47,7 @@ public class MainStage {
 	private ArrayList<String> classification;						//arraylist of classification
 	private ArrayList<ArrayList<String>> lexemesByLine;				//arraylist of lexemes
 	private ArrayList<ArrayList<String>> classificationByLine;		//arraylist of classification
+	private ArrayList<Integer> line_numByLine;						//arraylist of lexemes line number
 	private ArrayList<String> identifiers;							//arraylist of identifiers
 	private ArrayList<String> values;								//arraylist of value of identifiers
 	public TableView<Lexeme> lexemeTable = new TableView();
@@ -69,6 +70,7 @@ public class MainStage {
 		this.classification = new ArrayList<String>();
 		this.lexemesByLine = new ArrayList<ArrayList<String>>();	
 		this.classificationByLine = new ArrayList<ArrayList<String>>();	
+		this.line_numByLine = new ArrayList<Integer>();
 		this.identifiers = new ArrayList<String>();	
 		this.values = new ArrayList<String>();	
 		this.file_btn = new Button();
@@ -520,6 +522,9 @@ public class MainStage {
 		//clear incase of next click
 		lexemes.clear();
 		classification.clear();
+		lexemesByLine.clear();
+		classificationByLine.clear();
+		line_numByLine.clear();
 		output.clear();
 		code.clear();
 		identifiers.clear();
@@ -529,9 +534,10 @@ public class MainStage {
 	    } 
 		for ( int i = 0; i<symbolTable.getItems().size(); i++) {
 			symbolTable.getItems().clear(); 
-	    } 
+	    }
 	}
 	private void setSymbolTable() {
+		System.out.println("\n=======SYMBOL TABLE======");
 		if(identifiers.size()!=0) {
 			for(int i=0;i<identifiers.size();i++) {
 				System.out.println(identifiers.get(i) + " = "+ values.get(i));
@@ -563,118 +569,233 @@ public class MainStage {
 //			}
 //		}
 //	}
-	private void evaluateArithmetic() {
+//	private String evaluateArithmetic() {
+//		Stack<Number> stack = new Stack<Number>();
+//		
+//		for(int i=0;i<lexemesByLine.size();i++) {																//for every line
+//			if(classificationByLine.get(i).get(0).equals("Arithmetic Operation Keyword")) {						//if first token is a arithmetic operator
+//				ArrayList<String> line = (ArrayList<String>) lexemesByLine.get(i).clone();						//get the reverse of each line
+//				Collections.reverse(line);
+//				ArrayList<String> line_class = (ArrayList<String>) classificationByLine.get(i).clone();			//get the reverse of each line_class
+//				Collections.reverse(line_class);
+//				
+//				for(int j=0;j<lexemesByLine.get(i).size();j++) {												//for every token of a line
+//					if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {												//float/numbar
+//						stack.push(Float.parseFloat(line.get(j)));
+//					}else if(line.get(j).matches("^(-?\\d+)$")) {												//integer/numbr
+//						stack.push(Integer.parseInt(line.get(j)));
+//					}else if(line_class.get(j).equals("Arithmetic Operation Keyword")){							//if operator
+//						boolean isFloat = false;
+//						Number op1 = stack.pop();
+//						Number op2 = stack.pop();
+//						
+//						if(op1 instanceof Float || op2 instanceof Float) isFloat = true;						//check if float
+//						if(isFloat) {																			//if isFloat, the result must also be float/numbar
+//							if(line.get(j).matches("^(SUM OF)$")) {					//addition
+//								stack.push(op1.floatValue() + op2.floatValue());
+//							}
+//							else if(line.get(j).matches("^(DIFF OF)$")) {			//subtraction
+//								stack.push(op1.floatValue() - op2.floatValue());
+//							}
+//							else if(line.get(j).matches("^(PRODUKT OF)$")) {		//multiplication
+//								stack.push(op1.floatValue() * op2.floatValue());
+//							}
+//							else if(line.get(j).matches("^(QUOSHUNT OF)$")) {		//division
+//								stack.push(op1.floatValue() / op2.floatValue());
+//							}
+//							else if(line.get(j).matches("^(MOD OF)$")) {			//mod division
+//								stack.push(op1.floatValue() % op2.floatValue());
+//							}
+//							else if(line.get(j).matches("^(BIGGR OF)$")) {			//bigger
+//								if(op1.floatValue() >= op2.floatValue()) {
+//									stack.push(op1.floatValue());
+//								}else stack.push(op2.floatValue());
+//							}
+//							else if(line.get(j).matches("^(SMALLR OF)$")) {			//smaller
+//								if(op1.floatValue() <= op2.floatValue()) {
+//									stack.push(op1.floatValue());
+//								}else stack.push(op2.floatValue());
+//							}
+//						}else {	//if !isFloat, the result must be an integer/numbr
+//							if(line.get(j).matches("^(SUM OF)$")) {					//addition
+//								stack.push(op1.intValue() + op2.intValue());
+//							}
+//							else if(line.get(j).matches("^(DIFF OF)$")) {			//subtraction
+//								stack.push(op1.intValue() - op2.intValue());
+//							}
+//							else if(line.get(j).matches("^(PRODUKT OF)$")) {		//multiplication
+//								stack.push(op1.intValue() * op2.intValue());
+//							}
+//							else if(line.get(j).matches("^(QUOSHUNT OF)$")) {		//division
+//								stack.push(op1.intValue() / op2.intValue());
+//							}
+//							else if(line.get(j).matches("^(MOD OF)$")) {			//mod division
+//								stack.push(op1.intValue() % op2.intValue());
+//							}
+//							else if(line.get(j).matches("^(BIGGR OF)$")) {			//bigger
+//								if(op1.intValue() >= op2.intValue()) {
+//									stack.push(op1.intValue());
+//								}else stack.push(op2.intValue());
+//							}
+//							else if(line.get(j).matches("^(SMALLR OF)$")) {			//smaller
+//								if(op1.intValue() <= op2.intValue()) {
+//									stack.push(op1.intValue());
+//								}else stack.push(op2.intValue());
+//							}
+//						}
+//					}else if(identifiers.contains(line.get(j))) {													//if varident
+//						for(int k=0;k<identifiers.size();k++) {
+//							if(identifiers.get(k).equals(line.get(j))) {
+//								if(values.get(k).matches("^(-?\\d*\\.\\d+)$")) {			//float/numbar
+//									stack.push(Float.parseFloat(values.get(k)));
+//								}else if(values.get(k).matches("^(-?\\d+)$")) {				//integer/numbr
+//									stack.push(Integer.parseInt(values.get(k)));
+//								}
+//							}
+//						}
+//					}
+//				}
+//				Number result = stack.pop();														//the last item on the stack is the result
+//				System.out.print(lexemesByLine.get(i).toString() + " ");
+//				System.out.println("result = "+result);
+//				stack.clear();		
+//				/* 	UPDATE SYMBOL TABLE HERE
+//				 * 	IT = result
+//				 * 
+//				 * 
+//				 * 
+//				 */
+//				
+////				System.out.println("symbolTable: "+identifiers.size());
+////				for(int k=0;k<identifiers.size();k++) {
+////					System.out.println(identifiers.get(k) + " = "+ values.get(k));
+////				}
+//				return result.toString();
+//			}
+//		}
+//		return null;
+//	}
+	
+	private String evaluateArithmetic(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
 		Stack<Number> stack = new Stack<Number>();
 		
-		for(int i=0;i<lexemesByLine.size();i++) {																//for every line
-			if(classificationByLine.get(i).get(0).equals("Arithmetic Operation Keyword")) {						//if first token is a arithmetic operator
-				ArrayList<String> line = (ArrayList<String>) lexemesByLine.get(i).clone();						//get the reverse of each line
-				Collections.reverse(line);
-				ArrayList<String> line_class = (ArrayList<String>) classificationByLine.get(i).clone();			//get the reverse of each line_class
-				Collections.reverse(line_class);
+		ArrayList<String> line = (ArrayList<String>) lexemeLine.clone();								//get the reverse of each line
+		Collections.reverse(line);
+		ArrayList<String> line_class = (ArrayList<String>) classificationLine.clone();					//get the reverse of each line_class
+		Collections.reverse(line_class);
+		
+		for(int j=0;j<lexemeLine.size();j++) {															//for every token of a line
+			if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {												//float/numbar
+				stack.push(Float.parseFloat(line.get(j)));
+			}else if(line.get(j).matches("^(-?\\d+)$")) {												//integer/numbr
+				stack.push(Integer.parseInt(line.get(j)));
+			}else if(line_class.get(j).equals("Arithmetic Operation Keyword")){							//if operator
+				boolean isFloat = false;
+				Number op1 = stack.pop();
+				Number op2 = stack.pop();
 				
-				for(int j=0;j<lexemesByLine.get(i).size();j++) {												//for every token of a line
-					if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {												//float/numbar
-						stack.push(Float.parseFloat(line.get(j)));
-					}else if(line.get(j).matches("^(-?\\d+)$")) {												//integer/numbr
-						stack.push(Integer.parseInt(line.get(j)));
-					}else if(line_class.get(j).equals("Arithmetic Operation Keyword")){							//if operator
-						boolean isFloat = false;
-						Number op1 = stack.pop();
-						Number op2 = stack.pop();
-						
-						if(op1 instanceof Float || op2 instanceof Float) isFloat = true;						//check if float
-						if(isFloat) {																			//if isFloat, the result must also be float/numbar
-							if(line.get(j).matches("^(SUM OF)$")) {					//addition
-								stack.push(op1.floatValue() + op2.floatValue());
-							}
-							else if(line.get(j).matches("^(DIFF OF)$")) {			//subtraction
-								stack.push(op1.floatValue() - op2.floatValue());
-							}
-							else if(line.get(j).matches("^(PRODUKT OF)$")) {		//multiplication
-								stack.push(op1.floatValue() * op2.floatValue());
-							}
-							else if(line.get(j).matches("^(QUOSHUNT OF)$")) {		//division
-								stack.push(op1.floatValue() / op2.floatValue());
-							}
-							else if(line.get(j).matches("^(MOD OF)$")) {			//mod division
-								stack.push(op1.floatValue() % op2.floatValue());
-							}
-							else if(line.get(j).matches("^(BIGGR OF)$")) {			//bigger
-								if(op1.floatValue() >= op2.floatValue()) {
-									stack.push(op1.floatValue());
-								}else stack.push(op2.floatValue());
-							}
-							else if(line.get(j).matches("^(SMALLR OF)$")) {			//smaller
-								if(op1.floatValue() <= op2.floatValue()) {
-									stack.push(op1.floatValue());
-								}else stack.push(op2.floatValue());
-							}
-						}else {	//if !isFloat, the result must be an integer/numbr
-							if(line.get(j).matches("^(SUM OF)$")) {					//addition
-								stack.push(op1.intValue() + op2.intValue());
-							}
-							else if(line.get(j).matches("^(DIFF OF)$")) {			//subtraction
-								stack.push(op1.intValue() - op2.intValue());
-							}
-							else if(line.get(j).matches("^(PRODUKT OF)$")) {		//multiplication
-								stack.push(op1.intValue() * op2.intValue());
-							}
-							else if(line.get(j).matches("^(QUOSHUNT OF)$")) {		//division
-								stack.push(op1.intValue() / op2.intValue());
-							}
-							else if(line.get(j).matches("^(MOD OF)$")) {			//mod division
-								stack.push(op1.intValue() % op2.intValue());
-							}
-							else if(line.get(j).matches("^(BIGGR OF)$")) {			//bigger
-								if(op1.intValue() >= op2.intValue()) {
-									stack.push(op1.intValue());
-								}else stack.push(op2.intValue());
-							}
-							else if(line.get(j).matches("^(SMALLR OF)$")) {			//smaller
-								if(op1.intValue() <= op2.intValue()) {
-									stack.push(op1.intValue());
-								}else stack.push(op2.intValue());
-							}
-						}
-					}else if(identifiers.contains(line.get(j))) {												//if varident
-						for(int k=0;k<identifiers.size();k++) {
-							if(identifiers.get(k).equals(line.get(j))) {
-								if(values.get(k).matches("^(-?\\d*\\.\\d+)$")) {			//float/numbar
-									stack.push(Float.parseFloat(values.get(k)));
-								}else if(values.get(k).matches("^(-?\\d+)$")) {				//integer/numbr
-									stack.push(Integer.parseInt(values.get(k)));
-								}
-							}
+				if(op1 instanceof Float || op2 instanceof Float) isFloat = true;						//check if float
+				if(isFloat) {																			//if isFloat, the result must also be float/numbar
+					if(line.get(j).matches("^(SUM OF)$")) {					//addition
+						stack.push(op1.floatValue() + op2.floatValue());
+					}
+					else if(line.get(j).matches("^(DIFF OF)$")) {			//subtraction
+						stack.push(op1.floatValue() - op2.floatValue());
+					}
+					else if(line.get(j).matches("^(PRODUKT OF)$")) {		//multiplication
+						stack.push(op1.floatValue() * op2.floatValue());
+					}
+					else if(line.get(j).matches("^(QUOSHUNT OF)$")) {		//division
+						stack.push(op1.floatValue() / op2.floatValue());
+					}
+					else if(line.get(j).matches("^(MOD OF)$")) {			//mod division
+						stack.push(op1.floatValue() % op2.floatValue());
+					}
+					else if(line.get(j).matches("^(BIGGR OF)$")) {			//bigger
+						if(op1.floatValue() >= op2.floatValue()) {
+							stack.push(op1.floatValue());
+						}else stack.push(op2.floatValue());
+					}
+					else if(line.get(j).matches("^(SMALLR OF)$")) {			//smaller
+						if(op1.floatValue() <= op2.floatValue()) {
+							stack.push(op1.floatValue());
+						}else stack.push(op2.floatValue());
+					}
+				}else {	//if !isFloat, the result must be an integer/numbr
+					if(line.get(j).matches("^(SUM OF)$")) {					//addition
+						stack.push(op1.intValue() + op2.intValue());
+					}
+					else if(line.get(j).matches("^(DIFF OF)$")) {			//subtraction
+						stack.push(op1.intValue() - op2.intValue());
+					}
+					else if(line.get(j).matches("^(PRODUKT OF)$")) {		//multiplication
+						stack.push(op1.intValue() * op2.intValue());
+					}
+					else if(line.get(j).matches("^(QUOSHUNT OF)$")) {		//division
+						stack.push(op1.intValue() / op2.intValue());
+					}
+					else if(line.get(j).matches("^(MOD OF)$")) {			//mod division
+						stack.push(op1.intValue() % op2.intValue());
+					}
+					else if(line.get(j).matches("^(BIGGR OF)$")) {			//bigger
+						if(op1.intValue() >= op2.intValue()) {
+							stack.push(op1.intValue());
+						}else stack.push(op2.intValue());
+					}
+					else if(line.get(j).matches("^(SMALLR OF)$")) {			//smaller
+						if(op1.intValue() <= op2.intValue()) {
+							stack.push(op1.intValue());
+						}else stack.push(op2.intValue());
+					}
+				}
+			}else if(identifiers.contains(line.get(j))) {													//if varident
+				for(int k=0;k<identifiers.size();k++) {
+					if(identifiers.get(k).equals(line.get(j))) {
+						if(values.get(k).matches("^(-?\\d*\\.\\d+)$")) {			//float/numbar
+							stack.push(Float.parseFloat(values.get(k)));
+						}else if(values.get(k).matches("^(-?\\d+)$")) {				//integer/numbr
+							stack.push(Integer.parseInt(values.get(k)));
 						}
 					}
 				}
-				Number result = stack.pop();														//the last item on the stack is the result
-				System.out.print(lexemesByLine.get(i).toString() + " ");
-				System.out.println("result = "+result);
-				stack.clear();		
-				/* 	UPDATE SYMBOL TABLE HERE
-				 * 	IT = result
-				 * 
-				 * 
-				 * 
-				 */
-				
-//				System.out.println("symbolTable: "+identifiers.size());
-//				for(int k=0;k<identifiers.size();k++) {
-//					System.out.println(identifiers.get(k) + " = "+ values.get(k));
-//				}
 			}
 		}
+		Number result = stack.pop();														//the last item on the stack is the result
+		System.out.print(lexemeLine.toString() + " ");
+		System.out.println("result = "+result);
+		stack.clear();		
+		/* 	UPDATE SYMBOL TABLE HERE
+		 * 	IT = result
+		 * 
+		 * temporary ??? palang yung nasa baba since marami instance pa ng IT
+		 * 
+		 */
+		for(int i=0;i<identifiers.size();i++) {
+			if(identifiers.get(i).equals("IT")) {
+				//update value of IT
+				values.set(i, result.toString());
+				break;
+			}
+		}
+		
+//		System.out.println("symbolTable: "+identifiers.size());
+//		for(int k=0;k<identifiers.size();k++) {
+//			System.out.println(identifiers.get(k) + " = "+ values.get(k));
+//		}
+		return result.toString();
 	}
 	
-	private void runProgram() {
+	private void varDecInit() {
 		boolean varDecCheck = false,
 				varIdentCheck = false,
 				varAssCheck = false,
 				outIdentCheck = false,
 				strDelCheck = false;
 		String output = "";
+		
+		//initialize IT
+		identifiers.add("IT");																					//rener add mo nalang kaya agad si IT with NOOB value para di marami instance
+		values.add("NOOB");
 		
 		for (int lex=0; lex<lexemeTable.getItems().size(); lex++) {		
 //			System.out.println("Output: "+output);
@@ -714,46 +835,64 @@ public class MainStage {
 					continue;					
 				}
 			}
-			// ======================================
-			
-			// ============= VISIBLE ==============
-			if (classification.get(lex).equals("Output Keyword")){
-				outIdentCheck = true;
-				continue;
-			}
-			if (outIdentCheck) {
-				if (classification.get(lex).equals("Variable Identifier")) {
-					output = output + values.get(identifiers.indexOf(lexemes.get(lex))).toString();
-				}
-				else if (classification.get(lex).equals("String Delimiter")) {
-					if (!strDelCheck) {
-						strDelCheck = true;
-					}
-					else strDelCheck = false;
-				}
-				else if (classification.get(lex).equals("Literal")) {
-					output = output + lexemes.get(lex).toString();
-				}
-				else {
-					if(identifiers.contains("IT")) {
-						for(int i=0;i<identifiers.size();i++) {
-							if(identifiers.get(i).equals("IT")) {
-								
-							}
-						}
-					}
-					identifiers.add("IT");
-					values.add(output);
-					outIdentCheck = false;
-					setTerminal(output);
-					output = "";
-				}
-				continue;
-			}
-			// =====================================
 		}
-		evaluateArithmetic();
 	}
+	
+	private String printVisible(ArrayList<String> line, ArrayList<String> line_class) {							//function for printing to terminal
+		String output = "";
+		for(int i=0;i<line.size();i++) {
+			//if visible varident
+			if (line_class.get(i).equals("Variable Identifier") || 
+					line_class.get(i).equals("Implicit Variable")) {
+				output += values.get(identifiers.indexOf(line.get(i))).toString();
+			}
+			//if visible literal
+			else if (line_class.get(i).equals("Literal")) {
+				output += line.get(i).toString();
+			}
+			//if visible expression
+			else if(line_class.contains("Arithmetic Operation Keyword")) {
+				output += evaluateArithmetic(line,line_class);
+			}
+		}
+		output += "\n";
+		return output;
+	}
+	
+	private void runProgram() {
+		varDecInit();																							//cinall ko lang para gumana yung with variable dec/ init
+		String IT;
+		String output = "";
+		
+		for(int i=0;i<lexemesByLine.size();i++) {																//for every line
+			ArrayList<String> line = lexemesByLine.get(i);
+			ArrayList<String> line_class = classificationByLine.get(i);
+			//cases for every line
+			
+			//if line has arithmetic
+			if(line_class.contains("Arithmetic Operation Keyword")) {
+				IT = evaluateArithmetic(line,line_class);
+				System.out.println("IT = " + IT);
+			}
+			//if line has visible
+			if(line_class.contains("Output Keyword")) {
+				output += printVisible(line,line_class);
+			}
+			//if line has gimmeh
+			
+			//if line has boolean
+			
+			//if line has comparison
+			
+			//if line has var dec/init
+			
+			//if line has var assignment
+			
+		}
+		setTerminal(output);
+		output = "";
+	}
+	
 	
 	private void addMouseEventHandler() {
 		file_btn.setOnMouseClicked(new EventHandler<MouseEvent>(){							//eventhandler for file chooser
@@ -821,7 +960,7 @@ public class MainStage {
 								}
 								System.out.println();
 							}
-													
+							if(!lexemeLine.isEmpty()) line_numByLine.add(line_number);				//update arraylist of line_numbers		
 							//check if file is started with HAI
 							if(!isStringEmpty(str)) hasHAI();
 							//syntax checker for every line
@@ -840,6 +979,7 @@ public class MainStage {
 								classificationByLine.add((ArrayList<String>) classificationLine.clone());
 							}
 						}
+						System.out.println("lines with lexeme: "+line_numByLine.toString());
 						//check if file is delimited by a KTHXBYE
 						hasKTHXBYE(); 																//file must be delimited by a closing KTHXBYE
 						
