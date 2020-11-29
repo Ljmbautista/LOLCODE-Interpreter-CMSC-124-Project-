@@ -859,6 +859,103 @@ public class MainStage {
 		return output;
 	}
 	
+	private String evaluateBoolean(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {			//function for boolean operation
+		//1 = WIN
+		//0 = FAIL
+		System.out.print("line: "+ lexemeLine.toString());
+		Stack<Boolean> stack = new Stack<Boolean>();
+		
+		ArrayList<String> line = (ArrayList<String>) lexemeLine.clone();										//get the reverse of each line
+		Collections.reverse(line);
+		ArrayList<String> line_class = (ArrayList<String>) classificationLine.clone();							//get the reverse of each line_class
+		Collections.reverse(line_class);
+		
+		for(int j=0;j<line.size();j++) {
+			//if WIN[true]
+			if(line.get(j).equals("WIN")) {
+				stack.push(true);
+			}
+			//if FAIL[false]
+			else if(line.get(j).equals("FAIL")) {
+				stack.push(false);
+			}
+			//if NOT
+			else if(line.get(j).equals("NOT")) {						//not
+				boolean op = stack.pop();
+				//if WIN
+				if(op == true) {
+					//push 0
+					stack.push(false);
+				}
+				//if FAIL
+				else stack.push(true);
+			}
+			//if infinite arity AND
+			else if(line.get(j).equals("ALL OF")) {						//infinite arity and
+				//if stack has at least 1 false
+				if(stack.contains(false)){
+					stack.clear();
+					stack.push(false);
+				}else {
+					stack.clear();
+					stack.push(true);
+				}
+			}
+			//if infinite arity OR
+			else if(line.get(j).equals("ANY OF")) {						//infinite arity or
+				//if stack has at least 1 true
+				if(stack.contains(true)){
+					stack.clear();
+					stack.push(true);
+				}else {
+					stack.clear();
+					stack.push(false);
+				}
+			}
+			else if(identifiers.contains(line.get(j))) {				//if varident
+				for(int k=0;k<identifiers.size();k++) {
+					if(identifiers.get(k).equals(line.get(j))) {
+						if(values.get(k).equals("WIN")) {
+							stack.push(true);
+						}else stack.push(false);
+					}
+				}
+			}
+			//if OPERATOR
+			else if(line_class.get(j).equals("Boolean Operation Keyword")) {
+				boolean op1 = stack.pop();
+				boolean op2 = stack.pop();
+				
+				//cases for boolean operator
+				if(line.get(j).equals("BOTH OF")) {						//and
+					stack.push(op1 & op2);
+				}
+				else if(line.get(j).equals("EITHER OF")) {				//or
+					stack.push(op1 | op2);
+				}
+				else if(line.get(j).equals("WON OF")) {					//or
+					stack.push(op1 ^ op2);
+				}
+			}
+		}
+		//last element of stack is result
+		String result = "";
+		if(stack.peek() == false) result = "FAIL";
+		else result = "WIN";
+		System.out.println("result = " + result);
+		
+		//update IT
+		for(int i=0;i<identifiers.size();i++) {
+			if(identifiers.get(i).equals("IT")) {
+				//update value of IT
+				values.set(i, result.toString());
+				break;
+			}
+		}
+		
+		return result;
+	}
+	
 	private void runProgram() {
 		varDecInit();																							//cinall ko lang para gumana yung with variable dec/ init
 		String IT;
@@ -872,7 +969,7 @@ public class MainStage {
 			//if line has arithmetic
 			if(line_class.contains("Arithmetic Operation Keyword")) {
 				IT = evaluateArithmetic(line,line_class);
-				System.out.println("IT = " + IT);
+				//System.out.println("IT = " + IT);
 			}
 			//if line has visible
 			if(line_class.contains("Output Keyword")) {
@@ -881,7 +978,10 @@ public class MainStage {
 			//if line has gimmeh
 			
 			//if line has boolean
-			
+			if(line_class.contains("Boolean Operation Keyword")) {
+				IT = evaluateBoolean(line,line_class);
+				//System.out.println("IT = " + IT);
+			}
 			//if line has comparison
 			
 			//if line has var dec/init
@@ -931,9 +1031,7 @@ public class MainStage {
 								
 								for(int i=1;i<(words.length);i++) {									//start from the 2nd word
 									//System.out.println("checking word:" + words[i]);
-									
-//																		
-									if(s.matches("^(TLDR)$")) {										//ignore multiline comment
+									if(s.matches("^(TLDR)$")) {										//end of multiline comment
 										hasMultiLineComment = false;
 										continue;
 									}
