@@ -956,6 +956,126 @@ public class MainStage {
 		return result;
 	}
 	
+	private String evaluateComparison(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
+		String result = "";
+		System.out.println("\nline: "+ lexemeLine.toString());
+		Stack<Number> stack = new Stack<Number>();
+		Stack<Boolean> s = new Stack<Boolean>();
+		
+		ArrayList<String> line = (ArrayList<String>) lexemeLine.clone();								//get the reverse of each line
+		Collections.reverse(line);
+		ArrayList<String> line_class = (ArrayList<String>) classificationLine.clone();					//get the reverse of each line_class
+		Collections.reverse(line_class);
+		
+		for(int j=0;j<line.size();j++) {
+			System.out.println("token: "+ line.get(j));
+			if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {												//float/numbar
+				stack.push(Float.parseFloat(line.get(j)));
+			}else if(line.get(j).matches("^(-?\\d+)$")) {												//integer/numbr
+				stack.push(Integer.parseInt(line.get(j)));
+			}else if(line.get(j).equals("WIN")) {
+				stack.push(1);
+			}else if(line.get(j).equals("FAIL")) {
+				stack.push(0);
+			}else if(identifiers.contains(line.get(j))) {												//if varident
+				for(int k=0;k<identifiers.size();k++) {
+					if(identifiers.get(k).equals(line.get(j))) {
+						//cases for values of varident
+						if(values.get(k).matches("^(-?\\d*\\.\\d+)$")) {			//float/numbar
+							stack.push(Float.parseFloat(values.get(k)));
+						}else if(values.get(k).matches("^(-?\\d+)$")) {				//integer/numbr
+							stack.push(Integer.parseInt(values.get(k)));
+						}else if(values.get(k).equals("WIN")) {						//WIN
+							stack.push(1);
+						}else if(values.get(k).equals("FAIL")) {					//FAIL
+							stack.push(0);
+						}
+					}
+				}
+			}else if(line_class.get(j).equals("Arithmetic Operation Keyword")) {						//if compound
+				boolean isFloat = false;
+				
+				Number op1 = stack.pop();
+				Number op2 = stack.pop();
+				
+				ArrayList<String> l = new ArrayList<String>();
+				ArrayList<String> c = new ArrayList<String>();
+				
+				l.add(line.get(j));
+				l.add(op1.toString());
+				l.add(op2.toString());
+				c.add("Arithmetic Operation Keyword");
+				c.add("Literal");
+				c.add("Literal");
+				
+				if(op1 instanceof Float || op2 instanceof Float) isFloat = true;						//check if float
+				
+				if(isFloat) {																			//if isFloat, the result must also be float/numbar
+					String op = evaluateArithmetic(l,c);
+					System.out.println("l: " + l + "result = " + op);
+					stack.push(Float.parseFloat(op));
+				}else {	//if !isFloat, the result must be an integer/numbr
+					String op = evaluateArithmetic(l,c);
+					System.out.println("l: " + l + "result = " + op);
+					stack.push(Integer.parseInt(op));
+				}
+			}
+			else if(line_class.get(j).equals("Comparison Operation Keyword")){							//if operator
+				boolean isFloat = false;
+				boolean isInteger = false;
+				Number op1 = stack.pop();
+				Number op2 = stack.pop();
+				//System.out.println("stack: " + s.toString());
+				if(op1 instanceof Float && op2 instanceof Float) isFloat = true;						//check if float
+				
+				if(op1 instanceof Integer && op2 instanceof Integer) isInteger = true;					//check if int
+	
+				if(isFloat) {																			//if isFloat, can perform comparison between two float
+					if(line.get(j).matches("^(BOTH SAEM)$")) {					//equality
+						if(Float.compare(op1.floatValue(),op2.floatValue()) == 0){
+							stack.push(1);
+						}else stack.push(0);
+					}
+					else if(line.get(j).matches("^(DIFFRINT)$")) {				//non equality
+						if(Float.compare(op1.floatValue(),op2.floatValue()) != 0){
+							stack.push(1);
+						}else stack.push(0);
+					}
+				}
+				if(isInteger) {																			//if isInteger,  can perform comparison between two int
+					if(line.get(j).matches("^(BOTH SAEM)$")) {					//equality
+						if(Integer.compare(op1.intValue(),op2.intValue()) == 0){
+							stack.push(1);
+						}else stack.push(0);
+					}
+					else if(line.get(j).matches("^(DIFFRINT)$")) {				//non equality
+						if(Integer.compare(op1.intValue(),op2.intValue()) != 0){
+							stack.push(1);
+						}else stack.push(0);
+					}
+				}
+				
+				//if can't be typecasted , then FAIL
+				if(!isInteger && !isFloat) stack.push(0);
+				
+			}//System.out.println("stack: " + stack);
+		}
+		//System.out.println("result = " + result);
+		if(stack.peek().equals(1)) {
+			result = "WIN";
+		}else result = "FAIL";
+		
+		//update IT variable
+		for(int i=0;i<identifiers.size();i++) {
+			if(identifiers.get(i).equals("IT")) {
+				//update value of IT
+				values.set(i, result.toString());
+				break;
+			}
+		}
+		return result;
+	}
+	
 	private void runProgram() {
 		varDecInit();																							//cinall ko lang para gumana yung with variable dec/ init
 		String IT;
@@ -983,7 +1103,10 @@ public class MainStage {
 				//System.out.println("IT = " + IT);
 			}
 			//if line has comparison
-			
+			if(line_class.contains("Comparison Operation Keyword")) {
+				IT = evaluateComparison(line,line_class);
+				System.out.println("IT = " + IT);
+			}
 			//if line has var dec/init
 			
 			//if line has var assignment
