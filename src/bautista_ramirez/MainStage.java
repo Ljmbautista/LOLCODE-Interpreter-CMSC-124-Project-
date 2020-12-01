@@ -13,6 +13,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Stack;
 import java.util.TreeMap;
 
@@ -25,6 +26,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
@@ -54,6 +56,8 @@ public class MainStage {
 	public TableView<Identifier> symbolTable = new TableView();
 	private TextArea code;
 	private TextArea output;
+	
+	
 	
 	public final static int WINDOW_WIDTH = 1080;
 	public final static int WINDOW_HEIGHT = 720;
@@ -429,34 +433,34 @@ public class MainStage {
 		identifiers.add(identifier);
 		values.add(value);
 	}
-	private void VISIBLEChecker(int elem) {
-		System.out.println("lexemes has VISIBLE");
-		String itValue = "";
-		boolean visitedVisible = false;
-		for(int i=0;i<lexemes.size()-1;i++) {
-			if (visitedVisible) { // has already encountered VISIBLE lexeme
-				if (classification.get(i).matches("String Delimiter")) continue; 		// ignore quotes
-				else if (classification.get(i).matches("Literal"))						// concatenate string to value of IT
-					itValue = itValue.concat(lexemes.get(i));
-				
-				else if (classification.get(i).matches("Variable Identifier")) {
-					for (int j=0; j<identifiers.size(); j++) {							// look for varident in identifiers list
-						if (lexemes.get(i).equals(identifiers.get(j))) 					
-							itValue = itValue.concat(values.get(j));					// concatenate value of varident to value of IT
-					}
-				}
-				else break;
-			}
-			if (classification.get(i).matches("Output Keyword")) { 						// encounter VISIBLE lexeme
-				visitedVisible = true;													// set visited flag
-			}
-		}
-		
-		setTerminal(itValue);
-		
-		identifiers.add("IT");															// add IT and its value to identifiers list
-		values.add(itValue);
-	}
+//	private void VISIBLEChecker(int elem) {
+//		System.out.println("lexemes has VISIBLE");
+//		String itValue = "";
+//		boolean visitedVisible = false;
+//		for(int i=0;i<lexemes.size()-1;i++) {
+//			if (visitedVisible) { // has already encountered VISIBLE lexeme
+//				if (classification.get(i).matches("String Delimiter")) continue; 		// ignore quotes
+//				else if (classification.get(i).matches("Literal"))						// concatenate string to value of IT
+//					itValue = itValue.concat(lexemes.get(i));
+//				
+//				else if (classification.get(i).matches("Variable Identifier")) {
+//					for (int j=0; j<identifiers.size(); j++) {							// look for varident in identifiers list
+//						if (lexemes.get(i).equals(identifiers.get(j))) 					
+//							itValue = itValue.concat(values.get(j));					// concatenate value of varident to value of IT
+//					}
+//				}
+//				else break;
+//			}
+//			if (classification.get(i).matches("Output Keyword")) { 						// encounter VISIBLE lexeme
+//				visitedVisible = true;													// set visited flag
+//			}
+//		}
+//		
+//		setTerminal(itValue);
+//		
+//		identifiers.add("IT");															// add IT and its value to identifiers list
+//		values.add(itValue);
+//	}
 	private boolean isComment(String str) {													//checker if comment
 		//check if string is a comment
 		if(str.matches("^(OBTW)$")) hasMultiLineComment = true;								//flag for multi-line comment
@@ -569,112 +573,6 @@ public class MainStage {
 //			}
 //		}
 //	}
-//	private String evaluateArithmetic() {
-//		Stack<Number> stack = new Stack<Number>();
-//		
-//		for(int i=0;i<lexemesByLine.size();i++) {																//for every line
-//			if(classificationByLine.get(i).get(0).equals("Arithmetic Operation Keyword")) {						//if first token is a arithmetic operator
-//				ArrayList<String> line = (ArrayList<String>) lexemesByLine.get(i).clone();						//get the reverse of each line
-//				Collections.reverse(line);
-//				ArrayList<String> line_class = (ArrayList<String>) classificationByLine.get(i).clone();			//get the reverse of each line_class
-//				Collections.reverse(line_class);
-//				
-//				for(int j=0;j<lexemesByLine.get(i).size();j++) {												//for every token of a line
-//					if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {												//float/numbar
-//						stack.push(Float.parseFloat(line.get(j)));
-//					}else if(line.get(j).matches("^(-?\\d+)$")) {												//integer/numbr
-//						stack.push(Integer.parseInt(line.get(j)));
-//					}else if(line_class.get(j).equals("Arithmetic Operation Keyword")){							//if operator
-//						boolean isFloat = false;
-//						Number op1 = stack.pop();
-//						Number op2 = stack.pop();
-//						
-//						if(op1 instanceof Float || op2 instanceof Float) isFloat = true;						//check if float
-//						if(isFloat) {																			//if isFloat, the result must also be float/numbar
-//							if(line.get(j).matches("^(SUM OF)$")) {					//addition
-//								stack.push(op1.floatValue() + op2.floatValue());
-//							}
-//							else if(line.get(j).matches("^(DIFF OF)$")) {			//subtraction
-//								stack.push(op1.floatValue() - op2.floatValue());
-//							}
-//							else if(line.get(j).matches("^(PRODUKT OF)$")) {		//multiplication
-//								stack.push(op1.floatValue() * op2.floatValue());
-//							}
-//							else if(line.get(j).matches("^(QUOSHUNT OF)$")) {		//division
-//								stack.push(op1.floatValue() / op2.floatValue());
-//							}
-//							else if(line.get(j).matches("^(MOD OF)$")) {			//mod division
-//								stack.push(op1.floatValue() % op2.floatValue());
-//							}
-//							else if(line.get(j).matches("^(BIGGR OF)$")) {			//bigger
-//								if(op1.floatValue() >= op2.floatValue()) {
-//									stack.push(op1.floatValue());
-//								}else stack.push(op2.floatValue());
-//							}
-//							else if(line.get(j).matches("^(SMALLR OF)$")) {			//smaller
-//								if(op1.floatValue() <= op2.floatValue()) {
-//									stack.push(op1.floatValue());
-//								}else stack.push(op2.floatValue());
-//							}
-//						}else {	//if !isFloat, the result must be an integer/numbr
-//							if(line.get(j).matches("^(SUM OF)$")) {					//addition
-//								stack.push(op1.intValue() + op2.intValue());
-//							}
-//							else if(line.get(j).matches("^(DIFF OF)$")) {			//subtraction
-//								stack.push(op1.intValue() - op2.intValue());
-//							}
-//							else if(line.get(j).matches("^(PRODUKT OF)$")) {		//multiplication
-//								stack.push(op1.intValue() * op2.intValue());
-//							}
-//							else if(line.get(j).matches("^(QUOSHUNT OF)$")) {		//division
-//								stack.push(op1.intValue() / op2.intValue());
-//							}
-//							else if(line.get(j).matches("^(MOD OF)$")) {			//mod division
-//								stack.push(op1.intValue() % op2.intValue());
-//							}
-//							else if(line.get(j).matches("^(BIGGR OF)$")) {			//bigger
-//								if(op1.intValue() >= op2.intValue()) {
-//									stack.push(op1.intValue());
-//								}else stack.push(op2.intValue());
-//							}
-//							else if(line.get(j).matches("^(SMALLR OF)$")) {			//smaller
-//								if(op1.intValue() <= op2.intValue()) {
-//									stack.push(op1.intValue());
-//								}else stack.push(op2.intValue());
-//							}
-//						}
-//					}else if(identifiers.contains(line.get(j))) {													//if varident
-//						for(int k=0;k<identifiers.size();k++) {
-//							if(identifiers.get(k).equals(line.get(j))) {
-//								if(values.get(k).matches("^(-?\\d*\\.\\d+)$")) {			//float/numbar
-//									stack.push(Float.parseFloat(values.get(k)));
-//								}else if(values.get(k).matches("^(-?\\d+)$")) {				//integer/numbr
-//									stack.push(Integer.parseInt(values.get(k)));
-//								}
-//							}
-//						}
-//					}
-//				}
-//				Number result = stack.pop();														//the last item on the stack is the result
-//				System.out.print(lexemesByLine.get(i).toString() + " ");
-//				System.out.println("result = "+result);
-//				stack.clear();		
-//				/* 	UPDATE SYMBOL TABLE HERE
-//				 * 	IT = result
-//				 * 
-//				 * 
-//				 * 
-//				 */
-//				
-////				System.out.println("symbolTable: "+identifiers.size());
-////				for(int k=0;k<identifiers.size();k++) {
-////					System.out.println(identifiers.get(k) + " = "+ values.get(k));
-////				}
-//				return result.toString();
-//			}
-//		}
-//		return null;
-//	}
 	
 	private String evaluateArithmetic(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
 		Stack<Number> stack = new Stack<Number>();
@@ -764,12 +662,8 @@ public class MainStage {
 		System.out.print(lexemeLine.toString() + " ");
 		System.out.println("result = "+result);
 		stack.clear();		
-		/* 	UPDATE SYMBOL TABLE HERE
-		 * 	IT = result
-		 * 
-		 * temporary ??? palang yung nasa baba since marami instance pa ng IT
-		 * 
-		 */
+		
+		//update values of identifier
 		for(int i=0;i<identifiers.size();i++) {
 			if(identifiers.get(i).equals("IT")) {
 				//update value of IT
@@ -846,17 +740,53 @@ public class MainStage {
 					line_class.get(i).equals("Implicit Variable")) {
 				output += values.get(identifiers.indexOf(line.get(i))).toString();
 			}
+			//if boolean expression
+			else if(line_class.contains("Boolean Operation Keyword")) {
+				output += evaluateBoolean(line,line_class);
+				break;
+			}
+			//if comparison expression
+			else if(line_class.contains("Comparison Operation Keyword")) {
+				output += evaluateComparison(line,line_class);
+				break;
+			}
+			//if arithmetic expression
+			else if(line_class.contains("Arithmetic Operation Keyword")) {
+				output += evaluateArithmetic(line,line_class);
+				break;
+			}
 			//if visible literal
 			else if (line_class.get(i).equals("Literal")) {
 				output += line.get(i).toString();
 			}
-			//if visible expression
-			else if(line_class.contains("Arithmetic Operation Keyword")) {
-				output += evaluateArithmetic(line,line_class);
-			}
 		}
 		output += "\n";
 		return output;
+	}
+	
+	private void getGimmeh(ArrayList<String> line, ArrayList<String> line_class) {									//function that handles user input
+		
+		//update UI of dialogbox
+		TextInputDialog user_input = new TextInputDialog(); 
+		user_input.setTitle("User Input");
+		user_input.setHeaderText("User Input");
+		user_input.setContentText("Enter value: ");
+		
+		//get user input
+		Optional<String> gimmeh_input = user_input.showAndWait(); 
+		
+		//check if user input something
+		if(gimmeh_input.isPresent()) {
+			//update value of varident
+			for(int i=0;i<line.size();i++) {
+				if (line_class.get(i).equals("Variable Identifier") || 
+						line_class.get(i).equals("Implicit Variable")) {
+					values.set(identifiers.indexOf(line.get(i)), gimmeh_input.get().toString());
+					break;
+				}
+			}
+		}
+		
 	}
 	
 	private String evaluateBoolean(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {			//function for boolean operation
@@ -1082,45 +1012,45 @@ public class MainStage {
 	}
 	
 	private void evaluateIfElse(String IT){
-		ArrayList<ArrayList<String>> clause = new ArrayList<ArrayList<String>>();
-		
-		boolean nowaiFound = false;
-		boolean nowaiExist = false;
-		int nowaiLine = 0;
-		int OICLine = 0;
-		
-		//if expression is WIN, proceed to YA RLY
-		if(IT.equals("WIN")) {
-			//check if NO WAI exists
-			if(classification.contains("NO WAI Keyword")) nowaiExist = true;
-			//if NO WAI exists, perform YA RLY until NO WAI
-			if(nowaiExist) {
-				for(int i=0;i<lexemesByLine.size();i++) {
-					//look for NOWAI
-					if(lexemesByLine.get(i).contains("NO WAI")) {
-						nowaiLine = line_numByLine.get(i);
-					}
-					if(lexemesByLine.get(i).contains("OIC")) {
-						OICLine = line_numByLine.get(i);
-					}
-				}
-			}
-			
-			//if !NO WAI exists, perform YA RLY until OIC
-			else {
-				
-			}
-			//if expression is FAIL, proceed to NO WAI (if existing)
-			
-		}
-		else if(IT.equals("FAIL")) {
-			//skip YA RLY
-			
-			//check if NO WAI exists
-				//if exists, perform NO WAI
-				
-				//if not, skip to OIC
-		}
+//		ArrayList<ArrayList<String>> clause = new ArrayList<ArrayList<String>>();
+//		
+//		boolean nowaiFound = false;
+//		boolean nowaiExist = false;
+//		int nowaiLine = 0;
+//		int OICLine = 0;
+//		
+//		//if expression is WIN, proceed to YA RLY
+//		if(IT.equals("WIN")) {
+//			//check if NO WAI exists
+//			if(classification.contains("NO WAI Keyword")) nowaiExist = true;
+//			//if NO WAI exists, perform YA RLY until NO WAI
+//			if(nowaiExist) {
+//				for(int i=0;i<lexemesByLine.size();i++) {
+//					//look for NOWAI
+//					if(lexemesByLine.get(i).contains("NO WAI")) {
+//						nowaiLine = line_numByLine.get(i);
+//					}
+//					if(lexemesByLine.get(i).contains("OIC")) {
+//						OICLine = line_numByLine.get(i);
+//					}
+//				}
+//			}
+//			
+//			//if !NO WAI exists, perform YA RLY until OIC
+//			else {
+//				
+//			}
+//			//if expression is FAIL, proceed to NO WAI (if existing)
+//			
+//		}
+//		else if(IT.equals("FAIL")) {
+//			//skip YA RLY
+//			
+//			//check if NO WAI exists
+//				//if exists, perform NO WAI
+//				
+//				//if not, skip to OIC
+//		}
 	}
 	
 	private void variableAssignment(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
@@ -1136,11 +1066,11 @@ public class MainStage {
 		if(classificationLine.contains("Boolean Operation Keyword")) {
 			value = evaluateBoolean(l,c);
 		}
-		else if(classificationLine.contains("Arithmetic Operation Keyword")) {
-			value = evaluateArithmetic(l,c);
-		}
 		else if(classificationLine.contains("Comparison Operation Keyword")) {
 			value = evaluateComparison(l,c);
+		}
+		else if(classificationLine.contains("Arithmetic Operation Keyword")) {
+			value = evaluateArithmetic(l,c);
 		}
 		else if(classificationLine.contains("Literal")) {
 			//look for index of literal
@@ -1162,16 +1092,17 @@ public class MainStage {
 //		}
 	}
 	
-	private void runProgram() {
-		varDecInit();																							//cinall ko lang para gumana yung with variable dec/ init
+	private void runProgram() {																		//function for execute button
 		String IT = "";
 		String output = "";
-		boolean noWaiFound = false;
-		int noWaiLine = 0;
-		int oicLine = 0;
 		
-		
-		for(int i=0;i<lexemesByLine.size();i++) {																//for every line
+		//varDecInit yung dati mong runProgram
+		//cinall ko lang para gumana yung with variable dec/ init
+		//pakipattern nalang parang sa baba para maayos hehe
+		varDecInit();																							
+																												
+		//check every line statement/s
+		for(int i=0;i<lexemesByLine.size();i++) {																
 			ArrayList<String> line = lexemesByLine.get(i);
 			ArrayList<String> line_class = classificationByLine.get(i);
 			//cases for every line
@@ -1179,23 +1110,18 @@ public class MainStage {
 			//if line has var dec/init
 			
 			
-			
 			//if line has var assignment
 			if(line_class.contains("Assignment Keyword")) {
 				variableAssignment(line, line_class);
-			}
-			
-			//if line has arithmetic
-			if(line_class.contains("Arithmetic Operation Keyword")) {
-				IT = evaluateArithmetic(line,line_class);
-				//System.out.println("IT = " + IT);
 			}
 			//if line has visible
 			if(line_class.contains("Output Keyword")) {
 				output += printVisible(line,line_class);
 			}
 			//if line has gimmeh
-			
+			if(line_class.contains("Input Keyword")) {
+				getGimmeh(line, line_class);
+			}
 			//if line has boolean
 			if(line_class.contains("Boolean Operation Keyword")) {
 				IT = evaluateBoolean(line,line_class);
@@ -1206,17 +1132,24 @@ public class MainStage {
 				IT = evaluateComparison(line,line_class);
 				//System.out.println("IT = " + IT);
 			}
-			
+			//if line has arithmetic
+			if(line_class.contains("Arithmetic Operation Keyword")) {
+				IT = evaluateArithmetic(line,line_class);
+				//System.out.println("IT = " + IT);
+			}
 			//if line has if-else
 			if(line_class.contains("O RLY Keyword")) {
 				evaluateIfElse(IT);
 				
 			}
-			
 			//if line has switch case 
 			
+			
+			
+			setTerminal(output);						//print current status of terminal
+			setSymbolTable();							//print current status of symbol table
 		}
-		setTerminal(output);
+		//reset output/terminal content
 		output = "";
 	}
 	
@@ -1235,7 +1168,8 @@ public class MainStage {
 					if(file != null) {		//if file not empty
 						LinkedHashMap<String,String> map = new LinkedHashMap();
 						BufferedReader br = new BufferedReader(new FileReader(file));
-						String program = "", out = "", str;
+						String program = "", str;
+						String out = "";
 						
 						while((str=br.readLine())!=null) {											//read each line of file
 							line_number++;															//increment line_number for every line found
@@ -1326,7 +1260,7 @@ public class MainStage {
 			public void handle(MouseEvent e) {
 				clearExecuteBtn();																	//clear
 				runProgram();																		//check variable declarations/initializations
-				setSymbolTable();																	//update symbol table interface
+				
 			}
 		});
 	}
