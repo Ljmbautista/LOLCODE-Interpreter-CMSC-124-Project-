@@ -65,6 +65,7 @@ public class MainStage {
 	public boolean hasMultiLineComment = false;										//flag for multiline comment
 	public static ArrayList<String> lexemeLine = new ArrayList<String>();
 	public static ArrayList<String> classificationLine = new ArrayList<String>();
+	public static File file = new File("");
 	
 	public MainStage() {															//constructor for MainStage
 		this.root = new Group();
@@ -458,7 +459,7 @@ public class MainStage {
 //		
 //		setTerminal(itValue);
 //		
-//		identifiers.add("IT");															// add IT and its value to identifiers list
+//		identifiers.add("IT");																// add IT and its value to identifiers list
 //		values.add(itValue);
 //	}
 	private boolean isComment(String str) {													//checker if comment
@@ -468,12 +469,7 @@ public class MainStage {
 			return true;
 		}else return false;
 	}	
-	private boolean isInvalidIO(String str) {												//checker for invalid IO syntax
-		//check if I/O keyword have no varident or literal after the keyword
-		if(str.matches("^(VISIBLE)$") ||str.matches("^(GIMMEH)$")) {
-			return true;
-		}else return false;
-	}	
+	
 	private void setLexemeTable() {															//function for adding elements to Lexeme TableView
 		//printing of lexemes lexemeTable
 		ObservableList<Lexeme> lexTable = FXCollections.observableArrayList();
@@ -1167,10 +1163,33 @@ public class MainStage {
 				break;
 			}
 		}
-//		System.out.println("=========SYMBOL TABLE=========");
-//		for(int i=0;i<identifiers.size();i++) {
-//			System.out.println(identifiers.get(i) + " = "+ values.get(i));
-//		}
+	}
+	
+	private boolean variableAssignmentSyntaxChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {	//function for checking syntax of variable declaration
+		
+		if(lexemeLine.size() <= 2) return false;													//the size of the line must at least be 3
+		if(!identifiers.contains(lexemeLine.get(0))) return false;									//the variable used must be declared/IT
+		if(!classificationLine.get(1).equals("Assignment Keyword")) return false;					//if no R keyword
+		
+		//else no syntax error
+		return true;
+	}
+	private boolean GimmehChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {			//checker for invalid IO syntax
+
+		if(lexemeLine.size() == 1 || lexemeLine.size()>2) return false;											//the gimmeh statement should only be gimmeh varident
+		if(!identifiers.contains(lexemeLine.get(1))) return false;												//if variable not declared/IT
+			
+		//else no syntax error
+		return true;
+	}	
+	
+	private void printError(int line_number) {
+		String out = "";
+		out = "$lci "+ file.getName()+"\n";
+		out += "[ ! ] Error in line "+line_number;
+		
+		hasSyntaxError = true;																		
+		setTerminal(out);																			//print error to interface
 	}
 	
 	private void runProgram() {																		//function for execute button
@@ -1192,12 +1211,22 @@ public class MainStage {
 			
 			
 			//if line has var assignment
-			if(line_class.contains("Assignment Keyword")) {
-				variableAssignment(line, line_class);
+			if(line_class.contains("Assignment Keyword")) {												
+				if(variableAssignmentSyntaxChecker(line, line_class)) {									//check if valid syntax
+					variableAssignment(line, line_class);												//perform variable assignment
+				}else {
+					printError(line_numByLine.get(i));													//if error found, print line number error then break
+					break;
+				}
 			}
 			//if line has gimmeh
 			else if(line_class.contains("Input Keyword")) {
-				getGimmeh(line, line_class);
+				if(GimmehChecker(line, line_class)) {													//check if valid syntax
+					getGimmeh(line, line_class);														//perform gimmeh
+				}else {
+					printError(line_numByLine.get(i));													//if error found, print line number error then break
+					break;
+				}
 			}
 			//if line has visible
 			else if(line_class.contains("Output Keyword")) {
@@ -1234,7 +1263,6 @@ public class MainStage {
 		output = "";
 	}
 	
-	
 	private void addMouseEventHandler() {
 		file_btn.setOnMouseClicked(new EventHandler<MouseEvent>(){							//eventhandler for file chooser
 			public void handle(MouseEvent e) {
@@ -1244,7 +1272,7 @@ public class MainStage {
 				clearFileBtn();																//clear
 				
 				//file reading implementation
-				File file = fileChooser.showOpenDialog(stage);
+				file = fileChooser.showOpenDialog(stage);
 				try {
 					if(file != null) {		//if file not empty
 						LinkedHashMap<String,String> map = new LinkedHashMap();
@@ -1254,15 +1282,20 @@ public class MainStage {
 						
 						while((str=br.readLine())!=null) {											//read each line of file
 							line_number++;															//increment line_number for every line found
-							program = program + str + "\n";											//for printing the source code
+							program = program + line_number + " " + str + "\n";						//for printing the source code
+							
 							lexemeLine.clear();														//clear lexemeByLine
 							classificationLine.clear();
-							
 							System.out.println("reading line("+line_number+"):"+str);
+							
+							//checker if comments encountered to SKIP reading the line
 							if(removeTabs(str).matches("\s*TLDR")) hasMultiLineComment = false;		//if TLDR, end of multiline comment
 							if(isComment(removeTabs(str))) continue;								//ignore comment/s
-							if(isInvalidIO(removeTabs(str))) hasSyntaxError = true;					//check if valid IO statement
-							if(isOneWord(removeTabs(str))) lexemeChecker(removeTabs(str));			//if string can't be split (one word-line)
+							
+							
+							//if string can't be split (one word-line)
+							if(isOneWord(removeTabs(str))) lexemeChecker(removeTabs(str));			
+							//else, string can be split to words
 							else {
 								String[] words = str.split("\t| ");									//split each word by space delimiter  //TOKENIZE
 								System.out.println("words:"+Arrays.toString(words));
@@ -1277,12 +1310,10 @@ public class MainStage {
 										hasMultiLineComment = false;
 										continue;
 									}
-									if(hasMultiLineComment) {
-										//System.out.println("MULTILINE COMMENT");
-										continue;
-									}
 									
-									if(isComment(s)) break;											//ignore comment/s
+									//ignore comment/s
+									if(hasMultiLineComment) continue;								
+									if(isComment(s)) break;		
 									
 									try{ s = lexemeChecker(s); }									//check token if lexeme
 									catch(Exception e1) {											//if error occur during pattern checking, syntax error
@@ -1300,37 +1331,27 @@ public class MainStage {
 								}
 								System.out.println();
 							}
-							if(!lexemeLine.isEmpty()) line_numByLine.add(line_number);				//update arraylist of line_numbers		
-							//check if file is started with HAI
-							if(!isStringEmpty(str)) hasHAI();
-							//syntax checker for every line
-							//SyntaxChecker();
+							
+							if(!isStringEmpty(str)) hasHAI();										//checker if source code has HAI as code delimiter
 							
 							//if there is a syntax error, print error prompt
-							if(hasSyntaxError) {
-								out = "$lci "+file.getName()+"\n";
-								out += "[ ! ] Error in line "+line_number;
-								setTerminal(out);													//print error to interface
+							if(hasSyntaxError) {												
+								printError(line_number);											//print error to interface
 								break;																//terminate reading file if there's an error
 							}
 							//update lexemesByLine
 							if(!lexemeLine.isEmpty()) {
+								line_numByLine.add(line_number);									//update arraylist of line_numbers	
 								lexemesByLine.add((ArrayList<String>) lexemeLine.clone());
 								classificationByLine.add((ArrayList<String>) classificationLine.clone());
 							}
 						}
-						System.out.println("lines with lexeme: "+line_numByLine.toString());
-						//check if file is delimited by a KTHXBYE
 						hasKTHXBYE(); 																//file must be delimited by a closing KTHXBYE
 						
 						if(!hasSyntaxError) {														//if no error, update interface
 							setSourceCode(program);
 							setLexemeTable();
-						}else {																		//if with error, print error
-							out = "$lci "+file.getName()+"\n";
-							out += "[ ! ] Error in line "+line_number;
-							setTerminal(out);														//print error to interface
-						}
+						}else printError(line_number);												//if with error, print error	
 					}else System.out.println("[!] No file selected.");								//print error if no file is selected
 				} catch (IOException e1) {
 					e1.printStackTrace();
@@ -1339,9 +1360,11 @@ public class MainStage {
 		});
 		execute_btn.setOnMouseClicked(new EventHandler<MouseEvent>(){								//eventhandler for execute button
 			public void handle(MouseEvent e) {
-				clearExecuteBtn();																	//clear
-				runProgram();																		//check variable declarations/initializations
-				
+				//if has syntax error, cant be clicked
+				if(!hasSyntaxError) {
+					clearExecuteBtn();																	//clear for next click
+					runProgram();																		//run the program by line
+				}
 			}
 		});
 	}
