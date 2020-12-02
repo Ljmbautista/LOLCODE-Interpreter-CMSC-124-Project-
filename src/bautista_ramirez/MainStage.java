@@ -389,10 +389,10 @@ public class MainStage {
 			s = "";
 		}
 		else if(s.matches("^(\\\".*\\\")$")) {													//yarn/string
-			addLexeme(s,"String Delimiter");
+			addLexeme("\"","String Delimiter");
 			s = s.substring(1,(s.length()-1));													//remove the ""
 			addLexeme(s,"Literal");
-			addLexeme(s,"String Delimiter");
+			addLexeme("\"","String Delimiter");
 			s = "";
 		}
 		else if(s.matches("^(HOW IZ I)$")) {													//function delimeter
@@ -659,8 +659,8 @@ public class MainStage {
 			}
 		}
 		Number result = stack.pop();														//the last item on the stack is the result
-		System.out.print(lexemeLine.toString() + " ");
-		System.out.println("result = "+result);
+//		System.out.print(lexemeLine.toString() + " ");
+//		System.out.println("result = "+result);
 		stack.clear();		
 		
 		//update values of identifier
@@ -888,7 +888,8 @@ public class MainStage {
 	
 	private String evaluateComparison(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
 		String result = "";
-		Stack<Number> stack = new Stack<Number>();
+		Stack<String> stack = new Stack<String>();				//will hold the token/literal
+		Stack<String> datatype = new Stack<String>();			//will hold the datatype of the literal
 		
 		ArrayList<String> line = (ArrayList<String>) lexemeLine.clone();								//get the reverse of each line
 		Collections.reverse(line);
@@ -896,106 +897,189 @@ public class MainStage {
 		Collections.reverse(line_class);
 		
 		for(int j=0;j<line.size();j++) {
+			System.out.println("stack: " + stack.toString());
+			System.out.println("datatype: " + datatype.toString());
+			
 			if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {												//float/numbar
-				stack.push(Float.parseFloat(line.get(j)));
+				stack.push(line.get(j));
+				datatype.push("float");
 			}else if(line.get(j).matches("^(-?\\d+)$")) {												//integer/numbr
-				stack.push(Integer.parseInt(line.get(j)));
-			}else if(line.get(j).equals("WIN")) {
-				stack.push(1);
-			}else if(line.get(j).equals("FAIL")) {
-				stack.push(0);
-				
-			}else if(line.get(j).matches("\\w*")) {					//yarn literal		//not sure pa dito
-				stack.push(0);
+				stack.push(line.get(j));
+				datatype.push("integer");
+			}else if(line.get(j).equals("WIN")) {														//WIN
+				stack.push(line.get(j));
+				datatype.push("boolean");
+			}else if(line.get(j).equals("FAIL")) {														//FAIL
+				stack.push(line.get(j));
+				datatype.push("boolean");
+			}else if(line_class.get(j).equals("Literal")) {												//string
+				stack.push(line.get(j));
+				datatype.push("string");
 			}else if(identifiers.contains(line.get(j))) {												//if varident
 				for(int k=0;k<identifiers.size();k++) {
 					if(identifiers.get(k).equals(line.get(j))) {
 						//cases for values of varident
 						if(values.get(k).matches("^(-?\\d*\\.\\d+)$")) {			//float/numbar
-							stack.push(Float.parseFloat(values.get(k)));
+							stack.push(line.get(j));
+							datatype.push("float");
 						}else if(values.get(k).matches("^(-?\\d+)$")) {				//integer/numbr
-							stack.push(Integer.parseInt(values.get(k)));
+							stack.push(line.get(j));
+							datatype.push("integer");
 						}else if(values.get(k).equals("WIN")) {						//WIN
-							stack.push(1);
+							stack.push(line.get(j));
+							datatype.push("boolean");
 						}else if(values.get(k).equals("FAIL")) {					//FAIL
-							stack.push(0);
-						}else if(values.get(k).matches("\\w*")) {					//yarn literal		//not sure pa dito
-							stack.push(0);
+							stack.push(line.get(j));
+							datatype.push("boolean");
+						}else if(values.get(k).matches("\\w*")) {					//yarn literal		
+							stack.push(line.get(j));
+							datatype.push("string");
 						}
 					}
 				}
-			}else if(line_class.get(j).equals("Arithmetic Operation Keyword")) {						//if compound
-				boolean isFloat = false;
+			}
+			else if(line_class.get(j).equals("Arithmetic Operation Keyword")) {						//if compound
+				System.out.println("stack: " + stack.toString());
+				System.out.println("datatype: " + datatype.toString());
 				
-				Number op1 = stack.pop();
-				Number op2 = stack.pop();
+				String dt1 = datatype.pop();
+				String dt2 = datatype.pop();
 				
-				ArrayList<String> l = new ArrayList<String>();
-				ArrayList<String> c = new ArrayList<String>();
+				String op1 = stack.pop();
+				String op2 = stack.pop();
 				
-				l.add(line.get(j));
-				l.add(op1.toString());
-				l.add(op2.toString());
-				c.add("Arithmetic Operation Keyword");
-				c.add("Literal");
-				c.add("Literal");
-				
-				if(op1 instanceof Float || op2 instanceof Float) isFloat = true;						//check if float
-				
-				if(isFloat) {																			//if isFloat, the result must also be float/numbar
-					String op = evaluateArithmetic(l,c);
-					//System.out.println("l: " + l + "result = " + op);
-					stack.push(Float.parseFloat(op));
-				}else {	//if !isFloat, the result must be an integer/numbr
-					String op = evaluateArithmetic(l,c);
-					//System.out.println("l: " + l + "result = " + op);
-					stack.push(Integer.parseInt(op));
+				//check if both are of the valid datatype
+				if((!dt1.equals("float") || !dt1.equals("integer")) &&
+					(!dt2.equals("float") || !dt2.equals("integer"))	) {							//the tokens must be either integer or float to perform arithmetic
+					stack.push("FAIL");
+					datatype.push("boolean");
+				}else {
+					ArrayList<String> l = new ArrayList<String>();
+					ArrayList<String> c = new ArrayList<String>();
+					
+					l.add(line.get(j));
+					l.add(op1.toString());
+					l.add(op2.toString());
+					c.add("Arithmetic Operation Keyword");
+					c.add("Literal");
+					c.add("Literal");
+					
+					if(dt1.equals("float") || dt2.equals("float")) {								//check if float
+						String op = evaluateArithmetic(l,c);
+						//System.out.println("l: " + l + "result = " + op);
+						Float temp = Float.parseFloat(op);
+						stack.push(temp.toString());
+						datatype.push("float");
+					}else {																			//if !isFloat, the result must be an integer/numbr
+						String op = evaluateArithmetic(l,c);
+						//System.out.println("l: " + l + "result = " + op);
+						Integer temp = Integer.parseInt(op);
+						stack.push(temp.toString());
+						datatype.push("integer");
+					}
 				}
 			}
 			else if(line_class.get(j).equals("Comparison Operation Keyword")){							//if operator
-				boolean isFloat = false;
-				boolean isInteger = false;
-				Number op1 = stack.pop();
-				Number op2 = stack.pop();
-				//System.out.println("stack: " + s.toString());
-				if(op1 instanceof Float && op2 instanceof Float) isFloat = true;						//check if float
 				
-				if(op1 instanceof Integer && op2 instanceof Integer) isInteger = true;					//check if int
-	
-				if(isFloat) {																			//if isFloat, can perform comparison between two float
-					if(line.get(j).matches("^(BOTH SAEM)$")) {					//equality
-						if(Float.compare(op1.floatValue(),op2.floatValue()) == 0){
-							stack.push(1);
-						}else stack.push(0);
+				String dt1 = datatype.pop();
+				String dt2 = datatype.pop();
+				String op1 = stack.pop();
+				String op2 = stack.pop();
+				
+				//check if same datatype
+				if(!dt1.equals(dt2)) {																		//if not same datatype, return FAIL
+					stack.push("FAIL");
+					datatype.push("boolean");
+				}else {																						//if same datatype
+					System.out.println("stack: " + stack.toString());
+					if(dt1.equals("float") && dt2.equals("float")) {										//check if float
+						if(line.get(j).matches("^(BOTH SAEM)$")) {					//equality
+							if(Float.compare(Float.parseFloat(op1),Float.parseFloat(op2)) == 0){
+								stack.push("WIN");
+								datatype.push("boolean");
+							}else {
+								stack.push("FAIL");
+								datatype.push("boolean");
+							}
+						}
+						else if(line.get(j).matches("^(DIFFRINT)$")) {				//non equality
+							if(Float.compare(Float.parseFloat(op1),Float.parseFloat(op2)) != 0){
+								stack.push("WIN");
+								datatype.push("boolean");
+							}else {
+								stack.push("FAIL");
+								datatype.push("boolean");
+							}
+						}
 					}
-					else if(line.get(j).matches("^(DIFFRINT)$")) {				//non equality
-						if(Float.compare(op1.floatValue(),op2.floatValue()) != 0){
-							stack.push(1);
-						}else stack.push(0);
+					
+					else if(dt1.equals("integer") && dt2.equals("integer")) {								//check if int
+						if(line.get(j).matches("^(BOTH SAEM)$")) {					//equality
+							if(Integer.compare(Integer.parseInt(op1),Integer.parseInt(op2)) == 0){
+								stack.push("WIN");
+								datatype.push("boolean");
+							}else {
+								stack.push("FAIL");
+								datatype.push("boolean");
+							}
+						}
+						else if(line.get(j).matches("^(DIFFRINT)$")) {				//non equality
+							if(Integer.compare(Integer.parseInt(op1),Integer.parseInt(op2)) != 0){
+								stack.push("WIN");
+								datatype.push("boolean");
+							}else {
+								stack.push("FAIL");
+								datatype.push("boolean");
+							}
+						}
+					}
+					else if(dt1.equals("string") && dt2.equals("string")) {									//check if both string
+						if(line.get(j).matches("^(BOTH SAEM)$")) {					//equality
+							if(op1.equals(op2)) {
+								stack.push("WIN");
+								datatype.push("boolean");
+							}else {
+								stack.push("FAIL");
+								datatype.push("boolean");
+							}
+						}
+						else if(line.get(j).matches("^(DIFFRINT)$")) {				//non equality
+							if(!op1.equals(op2)) {
+								stack.push("WIN");
+								datatype.push("boolean");
+							}else {
+								stack.push("FAIL");
+								datatype.push("boolean");
+							}
+						}
+					}
+					else if(dt1.equals("boolean") && dt2.equals("boolean")) {								//check if boolean
+						if(line.get(j).matches("^(BOTH SAEM)$")) {					//equality
+							if(op1.equals(op2)) {
+								stack.push("WIN");
+								datatype.push("boolean");
+							}else {
+								stack.push("FAIL");
+								datatype.push("boolean");
+							}
+						}
+						else if(line.get(j).matches("^(DIFFRINT)$")) {				//non equality
+							if(!op1.equals(op2)) {
+								stack.push("WIN");
+								datatype.push("boolean");
+							}else {
+								stack.push("FAIL");
+								datatype.push("boolean");
+							}
+						}
 					}
 				}
-				if(isInteger) {																			//if isInteger,  can perform comparison between two int
-					if(line.get(j).matches("^(BOTH SAEM)$")) {					//equality
-						if(Integer.compare(op1.intValue(),op2.intValue()) == 0){
-							stack.push(1);
-						}else stack.push(0);
-					}
-					else if(line.get(j).matches("^(DIFFRINT)$")) {				//non equality
-						if(Integer.compare(op1.intValue(),op2.intValue()) != 0){
-							stack.push(1);
-						}else stack.push(0);
-					}
-				}
-				
-				//if can't be typecasted , then FAIL
-				if(!isInteger && !isFloat) stack.push(0);
-				
-			}//System.out.println("stack: " + stack);
+			}
+			System.out.println("stack: " + stack.toString());
+			System.out.println("datatype: " + datatype.toString());
 		}
-		
-		if(stack.peek().equals(1)) {
-			result = "WIN";
-		}else result = "FAIL";
+		//the last item on the stack is result
+		result = stack.pop();
 		
 		//update IT variable
 		for(int i=0;i<identifiers.size();i++) {
@@ -1005,9 +1089,6 @@ public class MainStage {
 				break;
 			}
 		}
-//		System.out.print(lexemeLine.toString());
-//		System.out.println("result = " + result);
-		
 		return result;
 	}
 	
@@ -1114,31 +1195,31 @@ public class MainStage {
 			if(line_class.contains("Assignment Keyword")) {
 				variableAssignment(line, line_class);
 			}
-			//if line has visible
-			if(line_class.contains("Output Keyword")) {
-				output += printVisible(line,line_class);
-			}
 			//if line has gimmeh
-			if(line_class.contains("Input Keyword")) {
+			else if(line_class.contains("Input Keyword")) {
 				getGimmeh(line, line_class);
 			}
-			//if line has boolean
-			if(line_class.contains("Boolean Operation Keyword")) {
-				IT = evaluateBoolean(line,line_class);
-				//System.out.println("IT = " + IT);
+			//if line has visible
+			else if(line_class.contains("Output Keyword")) {
+				output += printVisible(line,line_class);
 			}
 			//if line has comparison
-			if(line_class.contains("Comparison Operation Keyword")) {
+			else if(line_class.contains("Comparison Operation Keyword")) {
 				IT = evaluateComparison(line,line_class);
 				//System.out.println("IT = " + IT);
 			}
+			//if line has boolean
+			else if(line_class.contains("Boolean Operation Keyword")) {
+				IT = evaluateBoolean(line,line_class);
+				//System.out.println("IT = " + IT);
+			}
 			//if line has arithmetic
-			if(line_class.contains("Arithmetic Operation Keyword")) {
+			else if(line_class.contains("Arithmetic Operation Keyword")) {
 				IT = evaluateArithmetic(line,line_class);
 				//System.out.println("IT = " + IT);
 			}
 			//if line has if-else
-			if(line_class.contains("O RLY Keyword")) {
+			else if(line_class.contains("O RLY Keyword")) {
 				evaluateIfElse(IT);
 				
 			}
