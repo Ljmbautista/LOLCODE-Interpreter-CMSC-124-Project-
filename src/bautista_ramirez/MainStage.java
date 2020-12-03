@@ -6,14 +6,17 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.AbstractMap;
+import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Stack;
 import java.util.TreeMap;
 
@@ -1071,8 +1074,8 @@ public class MainStage {
 					}
 				}
 			}
-			System.out.println("stack: " + stack.toString());
-			System.out.println("datatype: " + datatype.toString());
+//			System.out.println("stack: " + stack.toString());
+//			System.out.println("datatype: " + datatype.toString());
 		}
 		//the last item on the stack is result
 		result = stack.pop();
@@ -1086,48 +1089,6 @@ public class MainStage {
 			}
 		}
 		return result;
-	}
-	
-	private void evaluateIfElse(String IT){
-//		ArrayList<ArrayList<String>> clause = new ArrayList<ArrayList<String>>();
-//		
-//		boolean nowaiFound = false;
-//		boolean nowaiExist = false;
-//		int nowaiLine = 0;
-//		int OICLine = 0;
-//		
-//		//if expression is WIN, proceed to YA RLY
-//		if(IT.equals("WIN")) {
-//			//check if NO WAI exists
-//			if(classification.contains("NO WAI Keyword")) nowaiExist = true;
-//			//if NO WAI exists, perform YA RLY until NO WAI
-//			if(nowaiExist) {
-//				for(int i=0;i<lexemesByLine.size();i++) {
-//					//look for NOWAI
-//					if(lexemesByLine.get(i).contains("NO WAI")) {
-//						nowaiLine = line_numByLine.get(i);
-//					}
-//					if(lexemesByLine.get(i).contains("OIC")) {
-//						OICLine = line_numByLine.get(i);
-//					}
-//				}
-//			}
-//			
-//			//if !NO WAI exists, perform YA RLY until OIC
-//			else {
-//				
-//			}
-//			//if expression is FAIL, proceed to NO WAI (if existing)
-//			
-//		}
-//		else if(IT.equals("FAIL")) {
-//			//skip YA RLY
-//			
-//			//check if NO WAI exists
-//				//if exists, perform NO WAI
-//				
-//				//if not, skip to OIC
-//		}
 	}
 	
 	private void variableAssignment(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
@@ -1174,6 +1135,7 @@ public class MainStage {
 		//else no syntax error
 		return true;
 	}
+	
 	private boolean GimmehChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {			//checker for invalid IO syntax
 
 		if(lexemeLine.size() == 1 || lexemeLine.size()>2) return false;											//the gimmeh statement should only be gimmeh varident
@@ -1192,9 +1154,49 @@ public class MainStage {
 		setTerminal(out);																			//print error to interface
 	}
 	
+	private ArrayList<Integer> evaluateIfElse(String IT, int i, ArrayList<ArrayList<String>> lexeme, ArrayList<ArrayList<String>> classification){
+		ArrayList<Integer> skip = new ArrayList<>();
+		int h, current=0, buffer = 0;
+		if (IT.equals("WIN")) {
+			for (h=i+1; h<classification.size(); h++) {
+				if (classification.get(h).contains("O RLY Keyword")) buffer+=1;
+				if (classification.get(h).contains("NO WAI Keyword")) {
+					if (buffer == 0) {
+						current = h;
+						break;
+					}
+					else buffer-=1;
+				}
+			}
+			for (h=current+1; h<classification.size(); h++) {
+				skip.add(h);
+				if (classification.get(h).contains("O RLY Keyword")) buffer+=1;
+				if (classification.get(h).contains("NO WAI Keyword")) {
+					if (buffer == 0) break;
+					else buffer-=1;
+				}
+				if (classification.get(h).contains("If-Then Delimiter")) break;
+			}
+		} else {
+			for (h=i+1; h<classification.size(); h++) {
+				skip.add(h);
+				if (classification.get(h).contains("O RLY Keyword")) buffer+=1;
+				if (classification.get(h).contains("NO WAI Keyword")) {
+					if (buffer == 0) {
+						break;
+					}
+					else buffer-=1;
+				}
+			}
+		}
+		return skip;
+	}
+	
 	private void runProgram() {																		//function for execute button
 		String IT = "";
 		String output = "";
+		ArrayList<Integer> skipList = new ArrayList<>();
+		ArrayList<Integer> ifElseSkip = new ArrayList<>();
 		
 		//varDecInit yung dati mong runProgram
 		//cinall ko lang para gumana yung with variable dec/ init
@@ -1202,13 +1204,17 @@ public class MainStage {
 		varDecInit();																							
 																												
 		//check every line statement/s
-		for(int i=0;i<lexemesByLine.size();i++) {																
+		for(int i=0;i<lexemesByLine.size();i++) {
+			if (!skipList.isEmpty())
+			if (skipList.contains(i)) {
+				skipList.remove((Object) i);
+				continue;
+			}
 			ArrayList<String> line = lexemesByLine.get(i);
 			ArrayList<String> line_class = classificationByLine.get(i);
 			//cases for every line
 			
 			//if line has var dec/init
-			
 			
 			//if line has var assignment
 			if(line_class.contains("Assignment Keyword")) {												
@@ -1249,11 +1255,10 @@ public class MainStage {
 			}
 			//if line has if-else
 			else if(line_class.contains("O RLY Keyword")) {
-				evaluateIfElse(IT);
-				
+				ifElseSkip = evaluateIfElse(IT,i,lexemesByLine,classificationByLine);
+				ifElseSkip.forEach(skipList::add);
 			}
-			//if line has switch case 
-			
+			//if line has switch case			
 			
 			
 			setTerminal(output);						//print current status of terminal
@@ -1286,7 +1291,7 @@ public class MainStage {
 							
 							lexemeLine.clear();														//clear lexemeByLine
 							classificationLine.clear();
-							System.out.println("reading line("+line_number+"):"+str);
+//							System.out.println("reading line("+line_number+"):"+str);
 							
 							//checker if comments encountered to SKIP reading the line
 							if(removeTabs(str).matches("\s*TLDR")) hasMultiLineComment = false;		//if TLDR, end of multiline comment
@@ -1298,7 +1303,7 @@ public class MainStage {
 							//else, string can be split to words
 							else {
 								String[] words = str.split("\t| ");									//split each word by space delimiter  //TOKENIZE
-								System.out.println("words:"+Arrays.toString(words));
+//								System.out.println("words:"+Arrays.toString(words));
 								String s = new String();
 								
 								if(words.length != 0 && isComment(words[0])) continue;				//ignore comments
@@ -1329,7 +1334,7 @@ public class MainStage {
 									}
 //									System.out.println("current s:"+s);		
 								}
-								System.out.println();
+//								System.out.println();
 							}
 							
 							if(!isStringEmpty(str)) hasHAI();										//checker if source code has HAI as code delimiter
