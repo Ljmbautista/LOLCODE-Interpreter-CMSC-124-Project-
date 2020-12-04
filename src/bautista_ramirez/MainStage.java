@@ -919,19 +919,19 @@ public class MainStage {
 					if(identifiers.get(k).equals(line.get(j))) {
 						//cases for values of varident
 						if(values.get(k).matches("^(-?\\d*\\.\\d+)$")) {			//float/numbar
-							stack.push(line.get(j));
+							stack.push(values.get(identifiers.indexOf(line.get(j))));
 							datatype.push("float");
 						}else if(values.get(k).matches("^(-?\\d+)$")) {				//integer/numbr
-							stack.push(line.get(j));
+							stack.push(values.get(identifiers.indexOf(line.get(j))));
 							datatype.push("integer");
 						}else if(values.get(k).equals("WIN")) {						//WIN
-							stack.push(line.get(j));
+							stack.push(values.get(identifiers.indexOf(line.get(j))));
 							datatype.push("boolean");
 						}else if(values.get(k).equals("FAIL")) {					//FAIL
-							stack.push(line.get(j));
+							stack.push(values.get(identifiers.indexOf(line.get(j))));
 							datatype.push("boolean");
 						}else if(values.get(k).matches("\\w*")) {					//yarn literal		
-							stack.push(line.get(j));
+							stack.push(values.get(identifiers.indexOf(line.get(j))));
 							datatype.push("string");
 						}
 					}
@@ -948,11 +948,8 @@ public class MainStage {
 				String op2 = stack.pop();
 				
 				//check if both are of the valid datatype
-				if((!dt1.equals("float") || !dt1.equals("integer")) &&
-					(!dt2.equals("float") || !dt2.equals("integer"))	) {							//the tokens must be either integer or float to perform arithmetic
-					stack.push("FAIL");
-					datatype.push("boolean");
-				}else {
+				if((dt1.equals("float") || dt1.equals("integer")) &&
+					(dt2.equals("float") || dt2.equals("integer"))	) {							//the tokens must be either integer or float to perform arithmetic
 					ArrayList<String> l = new ArrayList<String>();
 					ArrayList<String> c = new ArrayList<String>();
 					
@@ -976,6 +973,9 @@ public class MainStage {
 						stack.push(temp.toString());
 						datatype.push("integer");
 					}
+				}else {
+					stack.push("FAIL");
+					datatype.push("boolean");
 				}
 			}
 			else if(line_class.get(j).equals("Comparison Operation Keyword")){							//if operator
