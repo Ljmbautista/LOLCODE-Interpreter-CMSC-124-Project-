@@ -1159,36 +1159,68 @@ public class MainStage {
 		int h, current=0, buffer = 0;
 		if (IT.equals("WIN")) {
 			for (h=i+1; h<classification.size(); h++) {
+				current = h;
+				System.out.println("YUM: "+classification.get(h)+" h: "+h);
 				if (classification.get(h).contains("O RLY Keyword")) buffer+=1;
-				if (classification.get(h).contains("NO WAI Keyword")) {
+				else if (classification.get(h).contains("NO WAI Keyword")) {
 					if (buffer == 0) {
-						current = h;
 						break;
 					}
 					else buffer-=1;
 				}
+				else if (classification.get(h).contains("If-Then Delimiter")) break;
 			}
 			for (h=current+1; h<classification.size(); h++) {
-				skip.add(h);
 				if (classification.get(h).contains("O RLY Keyword")) buffer+=1;
-				if (classification.get(h).contains("NO WAI Keyword")) {
+				else if (classification.get(h).contains("NO WAI Keyword")) {
 					if (buffer == 0) break;
 					else buffer-=1;
 				}
-				if (classification.get(h).contains("If-Then Delimiter")) break;
+				else if (classification.get(h).contains("If-Then Delimiter")) break;
+				skip.add(h);
 			}
 		} else {
 			for (h=i+1; h<classification.size(); h++) {
+				
 				skip.add(h);
 				if (classification.get(h).contains("O RLY Keyword")) buffer+=1;
-				if (classification.get(h).contains("NO WAI Keyword")) {
+				else if (classification.get(h).contains("NO WAI Keyword")) {
 					if (buffer == 0) {
 						break;
 					}
 					else buffer-=1;
 				}
+				else if (classification.get(h).contains("If-Then Delimiter")) break; 
 			}
 		}
+		return skip;
+	}
+	
+	private ArrayList<Integer> evaluateSwitch(String IT, int i, ArrayList<ArrayList<String>> lexeme, ArrayList<ArrayList<String>> classification) {
+		System.out.println("I GOT IN.");
+		ArrayList<Integer> skip = new ArrayList<>();
+		int h, buffer = 0;
+		boolean skipFlag = true, enteredFlag = false;
+		for (h=i+1;h<classification.size();h++) {
+			System.out.println("skipFlag: "+skipFlag);
+			if (classification.get(h).contains("OMG Keyword")) {				
+				System.out.println("Comparing "+lexeme.get(h).get(1)+ " and "+IT);
+				if (lexeme.get(h).get(1).equals(IT)) {
+					skipFlag = false;
+					enteredFlag = true;
+				}
+			}
+			else if (classification.get(h).contains("Switch-Case Delimiter")) buffer+=1;
+			else if (classification.get(h).contains("If-Then Delimiter")) {
+				if (buffer == 0) break;
+				else buffer-=1;
+			}
+			else if (classification.get(h).contains("GTFO Keyword")) skipFlag = true;
+			else if (classification.get(h).contains("OMGWTF Keyword")) {
+				if (!enteredFlag) skipFlag = false;
+			}
+			else if (skipFlag) skip.add(h);
+		}		
 		return skip;
 	}
 	
@@ -1196,7 +1228,7 @@ public class MainStage {
 		String IT = "";
 		String output = "";
 		ArrayList<Integer> skipList = new ArrayList<>();
-		ArrayList<Integer> ifElseSkip = new ArrayList<>();
+		ArrayList<Integer> newSkips = new ArrayList<>();
 		
 		//varDecInit yung dati mong runProgram
 		//cinall ko lang para gumana yung with variable dec/ init
@@ -1255,11 +1287,14 @@ public class MainStage {
 			}
 			//if line has if-else
 			else if(line_class.contains("O RLY Keyword")) {
-				ifElseSkip = evaluateIfElse(IT,i,lexemesByLine,classificationByLine);
-				ifElseSkip.forEach(skipList::add);
+				newSkips = evaluateIfElse(IT,i,lexemesByLine,classificationByLine);
+				newSkips.forEach(skipList::add);
 			}
-			//if line has switch case			
-			
+			//if line has switch case
+			else if(line_class.contains("Switch-Case Delimiter")) {
+				newSkips = evaluateSwitch(values.get(identifiers.indexOf("IT")),i,lexemesByLine,classificationByLine);
+				newSkips.forEach(skipList::add);
+			}
 			
 			setTerminal(output);						//print current status of terminal
 			setSymbolTable();							//print current status of symbol table
