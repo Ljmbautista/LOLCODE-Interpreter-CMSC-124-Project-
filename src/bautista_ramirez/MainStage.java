@@ -551,6 +551,7 @@ public class MainStage {
 		Collections.reverse(line_class);
 		
 		for(int j=0;j<lexemeLine.size();j++) {															//for every token of a line
+			System.out.println("stack: "+stack.toString());
 			if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {												//float/numbar
 				stack.push(Float.parseFloat(line.get(j)));
 			}else if(line.get(j).matches("^(-?\\d+)$")) {												//integer/numbr
@@ -703,8 +704,17 @@ public class MainStage {
 	private String printVisible(ArrayList<String> line, ArrayList<String> line_class) {							//function for printing to terminal
 		String output = "";
 		System.out.println("line: "+line.toString());
+		boolean shouldSkip = false;
+		int index = 0;		//index of last part of operation
+		
 		for(int i=0;i<line.size();i++) {
-			System.out.println("checking: "+line.get(i));
+//			System.out.println("\ni="+i);
+//			if(shouldSkip)System.out.println("skipping "+ line.get(i));
+			
+			//check if should skip
+			if(i==(index+1)) shouldSkip = false;
+			if(shouldSkip) continue;
+			
 			//if visible varident
 			if (line_class.get(i).equals("Variable Identifier") || line_class.get(i).equals("Implicit Variable")) {
 				//get the value of the varident
@@ -744,14 +754,31 @@ public class MainStage {
 			else if(line_class.get(i).contains("Arithmetic Operation Keyword")) {
 				ArrayList<String> temp = new ArrayList<String>();
 				ArrayList<String> temp_class = new ArrayList<String>();
-				for(int j=line_class.indexOf("Arithmetic Operation Keyword");j<line.size();j++) {
+				
+				//look for index of last AN-<literal> pair
+				index = 0;
+				for(int j=i+2;j<line.size();j++) {
+					try {
+						System.out.println(line.get(j)+"::"+line.get(j+1));
+						if(line_class.get(j).equals("AN Keyword")) {
+							index = j+1;
+							shouldSkip = true;
+						}
+					}catch(Exception e) {}
+				}
+				System.out.println("index: "+ index);
+				
+				//add to array that will be used for arithmetic operation
+				for(int j=i;j<=index;j++) {
 					//add the only needed tokens for arithmetic
 					temp.add(line.get(j));
 					temp_class.add(line_class.get(j));
 				}
+				
+				System.out.println(temp.toString());
 				output += evaluateArithmetic(temp,temp_class);
 				//output += evaluateArithmetic(line,line_class);
-				break;
+				//break;
 			}
 		}
 		output += "\n";
@@ -795,6 +822,7 @@ public class MainStage {
 		Collections.reverse(line_class);
 		
 		for(int j=0;j<line.size();j++) {
+			System.out.println("stack:"+stack.toString());
 			//if WIN[true]
 			if(line.get(j).equals("WIN")) {
 				stack.push(true);
@@ -861,6 +889,29 @@ public class MainStage {
 					stack.push(op1 ^ op2);
 				}
 			}
+			//if COMPARISON
+			else if(line_class.get(j).equals("Comparison Operation Keyword")) {
+				boolean op1 = stack.pop();
+				boolean op2 = stack.pop();
+	
+				ArrayList<String> l = new ArrayList<String>();
+				ArrayList<String> c = new ArrayList<String>();
+				
+				l.add(line_class.get(j));
+				c.add("Comparison Operation Keyword");
+				if(op1 == true) l.add("WIN");
+				else l.add("FAIL");
+				if(op2 == true) l.add("WIN");
+				else l.add("FAIL");
+				c.add("Literal");
+				c.add("Literal");
+				
+				System.out.println("line:"+l.toString());
+				String value = evaluateComparison(l,c);
+				if(value.equals("WIN")) stack.push(true);
+				else stack.push(false);
+			}
+			System.out.println("stack:"+stack.toString());
 		}
 		//last element of stack is result
 		String result = "";
@@ -1106,6 +1157,34 @@ public class MainStage {
 					}
 				}
 			}
+			//if boolean operator
+			else if(line_class.get(j).equals("Boolean Operation Keyword")) {
+				ArrayList<String> l = new ArrayList<String>();
+				ArrayList<String> c = new ArrayList<String>();
+				
+				l.add(line.get(j));
+				c.add(line_class.get(j));
+				
+				//if infinite arity
+				if(line_class.get(j).equals("ANY OF") || line_class.get(j).equals("ALL OF")) {
+					for(int i=0;i<stack.size();i++) {
+						l.add(stack.pop());
+						datatype.pop();
+						c.add("Literal");
+					}
+				}else {
+					//add only two elements
+					datatype.pop();
+					datatype.pop();
+					l.add(stack.pop());
+					l.add(stack.pop());
+					c.add("Literal");
+					c.add("Literal");
+				}
+				//update stack
+				stack.push(evaluateBoolean(l,c));
+				datatype.push("boolean");
+			}
 //			System.out.println("stack: " + stack.toString());
 //			System.out.println("datatype: " + datatype.toString());
 		}
@@ -1148,6 +1227,11 @@ public class MainStage {
 		else if(classificationLine.contains("Literal")) {
 			//look for index of literal
 			value = lexemeLine.get(classificationLine.indexOf("Literal"));
+		}
+		//if visible varident
+		else if (classificationLine.get(2).equals("Variable Identifier") || classificationLine.get(2).equals("Implicit Variable")) {
+			//get the value of the varident
+			value = values.get(identifiers.indexOf(lexemeLine.get(2)));
 		}
 		//System.out.println("value = "+ value);
 		
