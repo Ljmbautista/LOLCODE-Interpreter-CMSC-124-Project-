@@ -702,30 +702,56 @@ public class MainStage {
 	
 	private String printVisible(ArrayList<String> line, ArrayList<String> line_class) {							//function for printing to terminal
 		String output = "";
+		System.out.println("line: "+line.toString());
 		for(int i=0;i<line.size();i++) {
+			System.out.println("checking: "+line.get(i));
 			//if visible varident
-			if (line_class.get(i).equals("Variable Identifier") || 
-					line_class.get(i).equals("Implicit Variable")) {
+			if (line_class.get(i).equals("Variable Identifier") || line_class.get(i).equals("Implicit Variable")) {
+				//get the value of the varident
 				output += values.get(identifiers.indexOf(line.get(i))).toString();
-			}
-			//if boolean expression
-			else if(line_class.contains("Boolean Operation Keyword")) {
-				output += evaluateBoolean(line,line_class);
-				break;
-			}
-			//if comparison expression
-			else if(line_class.contains("Comparison Operation Keyword")) {
-				output += evaluateComparison(line,line_class);
-				break;
-			}
-			//if arithmetic expression
-			else if(line_class.contains("Arithmetic Operation Keyword")) {
-				output += evaluateArithmetic(line,line_class);
-				break;
 			}
 			//if visible literal
 			else if (line_class.get(i).contains("Literal")) {
 				output += line.get(i).toString();
+			}
+			//if boolean expression
+			else if(line_class.get(i).contains("Boolean Operation Keyword")) {
+				ArrayList<String> temp = new ArrayList<String>();
+				ArrayList<String> temp_class = new ArrayList<String>();
+				for(int j=line_class.indexOf("Boolean Operation Keyword");j<line.size();j++) {
+					//add the only needed tokens for boolean
+					temp.add(line.get(j));
+					temp_class.add(line_class.get(j));
+				}
+				output += evaluateBoolean(temp,temp_class);
+				//output += evaluateBoolean(line,line_class);
+				break;
+			}
+			//if comparison expression
+			else if(line_class.get(i).contains("Comparison Operation Keyword")) {
+				ArrayList<String> temp = new ArrayList<String>();
+				ArrayList<String> temp_class = new ArrayList<String>();
+				for(int j=line_class.indexOf("Comparison Operation Keyword");j<line.size();j++) {
+					//add the only needed tokens for comparison
+					temp.add(line.get(j));
+					temp_class.add(line_class.get(j));
+				}
+				output += evaluateComparison(temp, temp_class);
+				//output += evaluateComparison(line,line_class);
+				break;
+			}
+			//if arithmetic expression
+			else if(line_class.get(i).contains("Arithmetic Operation Keyword")) {
+				ArrayList<String> temp = new ArrayList<String>();
+				ArrayList<String> temp_class = new ArrayList<String>();
+				for(int j=line_class.indexOf("Arithmetic Operation Keyword");j<line.size();j++) {
+					//add the only needed tokens for arithmetic
+					temp.add(line.get(j));
+					temp_class.add(line_class.get(j));
+				}
+				output += evaluateArithmetic(temp,temp_class);
+				//output += evaluateArithmetic(line,line_class);
+				break;
 			}
 		}
 		output += "\n";
@@ -901,7 +927,8 @@ public class MainStage {
 			else if(line_class.get(j).equals("String Literal")) {
 				stack.push(line.get(j));
 				datatype.push("string");
-			}else if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {										//float/numbar
+			}
+			else if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {										//float/numbar
 				stack.push(line.get(j));
 				datatype.push("float");
 			}else if(line.get(j).matches("^(-?\\d+)$")) {												//integer/numbr
