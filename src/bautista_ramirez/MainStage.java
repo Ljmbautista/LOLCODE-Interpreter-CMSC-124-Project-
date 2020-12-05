@@ -60,8 +60,6 @@ public class MainStage {
 	private TextArea code;
 	private TextArea output;
 	
-	
-	
 	public final static int WINDOW_WIDTH = 1080;
 	public final static int WINDOW_HEIGHT = 720;
 	public boolean hasSyntaxError = false;											//flag for syntax error
@@ -395,7 +393,7 @@ public class MainStage {
 		else if(s.matches("^(\\\".*\\\")$")) {													//yarn/string
 			addLexeme("\"","String Delimiter");
 			s = s.substring(1,(s.length()-1));													//remove the ""
-			addLexeme(s,"Literal");
+			addLexeme(s,"String Literal");
 			addLexeme("\"","String Delimiter");
 			s = "";
 		}
@@ -437,34 +435,6 @@ public class MainStage {
 		identifiers.add(identifier);
 		values.add(value);
 	}
-//	private void VISIBLEChecker(int elem) {
-//		System.out.println("lexemes has VISIBLE");
-//		String itValue = "";
-//		boolean visitedVisible = false;
-//		for(int i=0;i<lexemes.size()-1;i++) {
-//			if (visitedVisible) { // has already encountered VISIBLE lexeme
-//				if (classification.get(i).matches("String Delimiter")) continue; 		// ignore quotes
-//				else if (classification.get(i).matches("Literal"))						// concatenate string to value of IT
-//					itValue = itValue.concat(lexemes.get(i));
-//				
-//				else if (classification.get(i).matches("Variable Identifier")) {
-//					for (int j=0; j<identifiers.size(); j++) {							// look for varident in identifiers list
-//						if (lexemes.get(i).equals(identifiers.get(j))) 					
-//							itValue = itValue.concat(values.get(j));					// concatenate value of varident to value of IT
-//					}
-//				}
-//				else break;
-//			}
-//			if (classification.get(i).matches("Output Keyword")) { 						// encounter VISIBLE lexeme
-//				visitedVisible = true;													// set visited flag
-//			}
-//		}
-//		
-//		setTerminal(itValue);
-//		
-//		identifiers.add("IT");																// add IT and its value to identifiers list
-//		values.add(itValue);
-//	}
 	private boolean isComment(String str) {													//checker if comment
 		//check if string is a comment
 		if(str.matches("^(OBTW)$")) hasMultiLineComment = true;								//flag for multi-line comment
@@ -472,7 +442,6 @@ public class MainStage {
 			return true;
 		}else return false;
 	}	
-	
 	private void setLexemeTable() {															//function for adding elements to Lexeme TableView
 		//printing of lexemes lexemeTable
 		ObservableList<Lexeme> lexTable = FXCollections.observableArrayList();
@@ -755,7 +724,7 @@ public class MainStage {
 				break;
 			}
 			//if visible literal
-			else if (line_class.get(i).equals("Literal")) {
+			else if (line_class.get(i).contains("Literal")) {
 				output += line.get(i).toString();
 			}
 		}
@@ -885,6 +854,29 @@ public class MainStage {
 		return result;
 	}
 	
+	private String checkDataType(String var, String s) {
+		String result = "Literal";
+		
+		ArrayList<ArrayList<String>> line = (ArrayList<ArrayList<String>>) lexemesByLine.clone();
+		Collections.reverse(line);
+		ArrayList<ArrayList<String>> line_class = (ArrayList<ArrayList<String>>) classificationByLine.clone();
+		Collections.reverse(line_class);
+		
+		for(int i=0;i<line.size();i++) {
+			if(line.get(i).contains(var) && line.get(i).contains(s)) {
+				//check if value is declared as string literal
+				try {
+					if(line_class.get(i).get(line.get(i).indexOf(s)-1).equals("String Delimiter")) {
+						result = "String Literal";
+						break;
+					}
+				}catch(Exception e) {}
+			}
+		}
+		
+		return result;
+	}
+	
 	private String evaluateComparison(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
 		String result = "";
 		Stack<String> stack = new Stack<String>();				//will hold the token/literal
@@ -905,46 +897,41 @@ public class MainStage {
 			}else if(line.get(j).equals("FAIL")) {														//FAIL
 				stack.push(line.get(j));
 				datatype.push("boolean");
-			}else if(line_class.get(j).equals("Literal")) {		
-				boolean HasStringDelimiter = false;
-				try{
-					if(line_class.get(j-1).equals("String Delimiter")){									
-						HasStringDelimiter = true;
-					}
-				}catch(Exception e) {}
-				
-				//check what type of literal
-				if(HasStringDelimiter) {																//string
-					stack.push(line.get(j));
-					datatype.push("string");
-				}else {
-					if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {										//float/numbar
-						stack.push(line.get(j));
-						datatype.push("float");
-					}else if(line.get(j).matches("^(-?\\d+)$")) {										//integer/numbr
-						stack.push(line.get(j));
-						datatype.push("integer");
-					}
-				}
-			}else if(identifiers.contains(line.get(j))) {												//if varident
+			}
+			else if(line_class.get(j).equals("String Literal")) {
+				stack.push(line.get(j));
+				datatype.push("string");
+			}else if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {										//float/numbar
+				stack.push(line.get(j));
+				datatype.push("float");
+			}else if(line.get(j).matches("^(-?\\d+)$")) {												//integer/numbr
+				stack.push(line.get(j));
+				datatype.push("integer");
+			}
+			else if(identifiers.contains(line.get(j))) {												//if varident
 				for(int k=0;k<identifiers.size();k++) {
 					if(identifiers.get(k).equals(line.get(j))) {
-						//cases for values of varident
-						if(values.get(k).matches("^(-?\\d*\\.\\d+)$")) {			//float/numbar
-							stack.push(values.get(identifiers.indexOf(line.get(j))));
-							datatype.push("float");
-						}else if(values.get(k).matches("^(-?\\d+)$")) {				//integer/numbr
-							stack.push(values.get(identifiers.indexOf(line.get(j))));
-							datatype.push("integer");
-						}else if(values.get(k).equals("WIN")) {						//WIN
-							stack.push(values.get(identifiers.indexOf(line.get(j))));
-							datatype.push("boolean");
-						}else if(values.get(k).equals("FAIL")) {					//FAIL
-							stack.push(values.get(identifiers.indexOf(line.get(j))));
-							datatype.push("boolean");
-						}else if(values.get(k).matches("\\w*")) {					//yarn literal		
+						//check datatype of value
+						String temp = checkDataType(line.get(j),values.get(k));
+						
+						if(temp.equals("String Literal")) {												//string
 							stack.push(values.get(identifiers.indexOf(line.get(j))));
 							datatype.push("string");
+						}else {
+							//cases for values of varident
+							if(values.get(k).matches("^(-?\\d*\\.\\d+)$")) {							//float/numbar
+								stack.push(values.get(identifiers.indexOf(line.get(j))));
+								datatype.push("float");
+							}else if(values.get(k).matches("^(-?\\d+)$")) {								//integer/numbr
+								stack.push(values.get(identifiers.indexOf(line.get(j))));
+								datatype.push("integer");
+							}else if(values.get(k).equals("WIN")) {										//WIN
+								stack.push(values.get(identifiers.indexOf(line.get(j))));
+								datatype.push("boolean");
+							}else if(values.get(k).equals("FAIL")) {									//FAIL
+								stack.push(values.get(identifiers.indexOf(line.get(j))));
+								datatype.push("boolean");
+							}
 						}
 					}
 				}
@@ -961,7 +948,7 @@ public class MainStage {
 				
 				//check if both are of the valid datatype
 				if((dt1.equals("float") || dt1.equals("integer")) &&
-					(dt2.equals("float") || dt2.equals("integer"))	) {							//the tokens must be either integer or float to perform arithmetic
+					(dt2.equals("float") || dt2.equals("integer"))	) {								//the tokens must be either integer or float to perform arithmetic
 					ArrayList<String> l = new ArrayList<String>();
 					ArrayList<String> c = new ArrayList<String>();
 					
@@ -1127,6 +1114,9 @@ public class MainStage {
 		}
 		else if(classificationLine.contains("Arithmetic Operation Keyword")) {
 			value = evaluateArithmetic(l,c);
+		}
+		else if(classificationLine.contains("String Literal")) {
+			value = lexemeLine.get(classificationLine.indexOf("String Literal"));
 		}
 		else if(classificationLine.contains("Literal")) {
 			//look for index of literal
