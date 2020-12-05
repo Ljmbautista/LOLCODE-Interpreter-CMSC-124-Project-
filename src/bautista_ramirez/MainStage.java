@@ -899,21 +899,33 @@ public class MainStage {
 			System.out.println("stack: " + stack.toString());
 			System.out.println("datatype: " + datatype.toString());
 			
-			if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {												//float/numbar
-				stack.push(line.get(j));
-				datatype.push("float");
-			}else if(line.get(j).matches("^(-?\\d+)$")) {												//integer/numbr
-				stack.push(line.get(j));
-				datatype.push("integer");
-			}else if(line.get(j).equals("WIN")) {														//WIN
+			if(line.get(j).equals("WIN")) {																//WIN
 				stack.push(line.get(j));
 				datatype.push("boolean");
 			}else if(line.get(j).equals("FAIL")) {														//FAIL
 				stack.push(line.get(j));
 				datatype.push("boolean");
-			}else if(line_class.get(j).equals("Literal")) {												//string
-				stack.push(line.get(j));
-				datatype.push("string");
+			}else if(line_class.get(j).equals("Literal")) {		
+				boolean HasStringDelimiter = false;
+				try{
+					if(line_class.get(j-1).equals("String Delimiter")){									
+						HasStringDelimiter = true;
+					}
+				}catch(Exception e) {}
+				
+				//check what type of literal
+				if(HasStringDelimiter) {																//string
+					stack.push(line.get(j));
+					datatype.push("string");
+				}else {
+					if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {										//float/numbar
+						stack.push(line.get(j));
+						datatype.push("float");
+					}else if(line.get(j).matches("^(-?\\d+)$")) {										//integer/numbr
+						stack.push(line.get(j));
+						datatype.push("integer");
+					}
+				}
 			}else if(identifiers.contains(line.get(j))) {												//if varident
 				for(int k=0;k<identifiers.size();k++) {
 					if(identifiers.get(k).equals(line.get(j))) {
@@ -978,7 +990,7 @@ public class MainStage {
 					datatype.push("boolean");
 				}
 			}
-			else if(line_class.get(j).equals("Comparison Operation Keyword")){							//if operator
+			else if(line_class.get(j).equals("Comparison Operation Keyword")){								//if operator
 				
 				String dt1 = datatype.pop();
 				String dt2 = datatype.pop();
@@ -986,10 +998,16 @@ public class MainStage {
 				String op2 = stack.pop();
 				
 				//check if same datatype
-				if(!dt1.equals(dt2)) {																		//if not same datatype, return FAIL
+				if(!dt1.equals(dt2) &&
+						line.get(j).equals("BOTH SAEM")) {													//if not same datatype for BOTH SAEM, return FAIL
 					stack.push("FAIL");
 					datatype.push("boolean");
-				}else {																						//if same datatype
+				}else if(!dt1.equals(dt2) &&
+						line.get(j).equals("DIFFRINT")) {													//if not same datatype for DIFFRINT, return WIN
+					stack.push("WIN");
+					datatype.push("boolean");
+				}
+				else {																						//if same datatype
 					System.out.println("stack: " + stack.toString());
 					if(dt1.equals("float") && dt2.equals("float")) {										//check if float
 						if(line.get(j).matches("^(BOTH SAEM)$")) {					//equality
@@ -1140,7 +1158,7 @@ public class MainStage {
 
 		if(lexemeLine.size() == 1 || lexemeLine.size()>2) return false;											//the gimmeh statement should only be gimmeh varident
 		if(!identifiers.contains(lexemeLine.get(1))) return false;												//if variable not declared/IT
-			
+		
 		//else no syntax error
 		return true;
 	}	
