@@ -648,57 +648,29 @@ public class MainStage {
 		return result.toString();
 	}
 	
-	private void varDecInit() {
-		boolean varDecCheck = false,
-				varIdentCheck = false,
-				varAssCheck = false,
-				outIdentCheck = false,
-				strDelCheck = false;
-		String output = "";
-		
-		//initialize IT
-		identifiers.add("IT");																					//rener add mo nalang kaya agad si IT with NOOB value para di marami instance
-		values.add("NOOB");
-		
-		for (int lex=0; lex<lexemeTable.getItems().size(); lex++) {		
-//			System.out.println("Output: "+output);
-			// ============== I HAS A ==============	
-			if (classification.get(lex).equals("Variable Declaration")) {
-//				System.out.println("[Variable Declaration]");
-				varDecCheck = true;
-				continue;
-			}
-			if (varDecCheck) {
-				if (classification.get(lex).equals("Variable Identifier")) {
-//					System.out.println("[Variable Identifier]");
-					varIdentCheck = true;
-					varDecCheck = false;
-				}
-				// If next lexeme is not ITZ, var is NOOB
-				if (!classification.get(lex+1).equals("Variable Assignment") ) {
-//					System.out.println("[NOOB Variable]");
-//					System.out.println("Adding: "+lexemes.get(lex-1));
-					addLiteralSymbol(lexemes.get(lex), "NOOB");
-					varIdentCheck = false;
-					continue;
-				}
-			}
-			if (varIdentCheck) {
-				if (classification.get(lex).equals("Variable Assignment")) {
-//					System.out.println("[Variable Assignment]");
-					varAssCheck = true;
-				}
-			}
-			if (varAssCheck) {
-				if (classification.get(lex).equals("Literal")) {
-//					System.out.println("[Literal]");
-					addLiteralSymbol(lexemes.get(lex-2), lexemes.get(lex));	
-						// get varident and its value from lexeme table
-					varAssCheck = false;
-					continue;					
-				}
+	private void varDecInit(int i, ArrayList<ArrayList<String>> lexeme, ArrayList<ArrayList<String>> classification) {
+		if (classification.get(i).size() == 2) {
+			if (classification.get(i).get(1).equals("Variable Identifier")) {
+				addLiteralSymbol(lexeme.get(i).get(1).toString(),"NOOB");
+				System.out.println("HAYOP");
 			}
 		}
+		
+		if (classification.get(i).size() == 4) {
+			if (classification.get(i).get(1).equals("Variable Identifier")) {
+				if (classification.get(i).get(3).equals("Literal"))
+					addLiteralSymbol(lexeme.get(i).get(1).toString(),lexeme.get(i).get(3).toString());
+				System.out.println("LUGAR");
+			}
+		}
+		
+		if (classification.get(i).size() == 5) {
+			if (classification.get(i).get(1).equals("Variable Identifier")) {
+				if (classification.get(i).get(4).equals("Literal"))
+					addLiteralSymbol(lexeme.get(i).get(1).toString(),lexeme.get(i).get(4).toString());
+				System.out.println("POOK");
+			}
+		}		
 	}
 	
 	private String printVisible(ArrayList<String> line, ArrayList<String> line_class) {							//function for printing to terminal
@@ -1351,8 +1323,7 @@ public class MainStage {
 		
 		//varDecInit yung dati mong runProgram
 		//cinall ko lang para gumana yung with variable dec/ init
-		//pakipattern nalang parang sa baba para maayos hehe
-		varDecInit();																							
+		//pakipattern nalang parang sa baba para maayos hehe												
 																												
 		//check every line statement/s
 		for(int i=0;i<lexemesByLine.size();i++) {
@@ -1366,6 +1337,9 @@ public class MainStage {
 			//cases for every line
 			
 			//if line has var dec/init
+			if (line_class.contains("Variable Declaration")) {
+				varDecInit(i, lexemesByLine, classificationByLine);
+			}
 			
 			//if line has var assignment
 			if(line_class.contains("Assignment Keyword")) {												
