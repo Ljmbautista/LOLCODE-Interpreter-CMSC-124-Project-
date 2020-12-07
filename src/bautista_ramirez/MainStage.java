@@ -1029,8 +1029,12 @@ public class MainStage {
 			//if new expression found on same line
 			if(hasNewExpression) return false; 
 			
+			//if lexeme is NOT 
+			if(l.get(i).contains("NOT")) {
+				//if(ANCount < 1) return false;
+			}
 			//if lexeme is ARITH OP Keyword
-			if(c.get(i).contains("Operation Keyword")) {
+			else if(c.get(i).contains("Operation Keyword")) {
 				stack.add(c.get(i));
 				
 				//check if nested expression
@@ -1281,6 +1285,15 @@ public class MainStage {
 						}
 					}
 				}
+			}
+			//if a NOT keyword
+			else if(line.get(j).contains("NOT")) {
+				String op1 = stack.pop();
+				datatype.pop();
+				
+				if(op1.equals("WIN")) stack.push("FAIL");
+				else stack.push("WIN");
+				datatype.push("boolean");
 			}
 			//if boolean operator
 			else if(line_class.get(j).equals("Boolean Operation Keyword")) {
