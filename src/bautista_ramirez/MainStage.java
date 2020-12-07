@@ -748,7 +748,8 @@ public class MainStage {
 			if(shouldSkip) continue;
 			
 			//if visible varident
-			if (line_class.get(i).equals("Variable Identifier") || line_class.get(i).equals("Implicit Variable")) {
+			if (line_class.get(i).equals("Variable Identifier") || 
+				line_class.get(i).equals("Implicit Variable")) {
 				//get the value of the varident
 				output += values.get(identifiers.indexOf(line.get(i))).toString();
 			}
@@ -760,27 +761,49 @@ public class MainStage {
 			else if(line_class.get(i).contains("Boolean Operation Keyword")) {
 				ArrayList<String> temp = new ArrayList<String>();
 				ArrayList<String> temp_class = new ArrayList<String>();
-				for(int j=line_class.indexOf("Boolean Operation Keyword");j<line.size();j++) {
+				
+				//look for index of last AN-<literal> pair
+				index = 0;
+				for(int j=i+2;j<line.size();j++) {
+					try {
+						System.out.println(line.get(j)+"::"+line.get(j+1));
+						if(line_class.get(j).equals("AN Keyword")) {
+							index = j+1;
+							shouldSkip = true;
+						}
+					}catch(Exception e) {}
+				}
+				
+				for(int j=i;j<=index;j++) {
 					//add the only needed tokens for boolean
 					temp.add(line.get(j));
 					temp_class.add(line_class.get(j));
 				}
 				output += evaluateBoolean(temp,temp_class);
-				//output += evaluateBoolean(line,line_class);
-				break;
 			}
 			//if comparison expression
 			else if(line_class.get(i).contains("Comparison Operation Keyword")) {
 				ArrayList<String> temp = new ArrayList<String>();
 				ArrayList<String> temp_class = new ArrayList<String>();
-				for(int j=line_class.indexOf("Comparison Operation Keyword");j<line.size();j++) {
+				
+				//look for index of last AN-<literal> pair
+				index = 0;
+				for(int j=i+2;j<line.size();j++) {
+					try {
+						System.out.println(line.get(j)+"::"+line.get(j+1));
+						if(line_class.get(j).equals("AN Keyword")) {
+							index = j+1;
+							shouldSkip = true;
+						}
+					}catch(Exception e) {}
+				}
+				
+				for(int j=i;j<=index;j++) {
 					//add the only needed tokens for comparison
 					temp.add(line.get(j));
 					temp_class.add(line_class.get(j));
 				}
 				output += evaluateComparison(temp, temp_class);
-				//output += evaluateComparison(line,line_class);
-				break;
 			}
 			//if arithmetic expression
 			else if(line_class.get(i).contains("Arithmetic Operation Keyword")) {
@@ -798,7 +821,6 @@ public class MainStage {
 						}
 					}catch(Exception e) {}
 				}
-				System.out.println("index: "+ index);
 				
 				//add to array that will be used for arithmetic operation
 				for(int j=i;j<=index;j++) {
@@ -809,8 +831,6 @@ public class MainStage {
 				
 				System.out.println(temp.toString());
 				output += evaluateArithmetic(temp,temp_class);
-				//output += evaluateArithmetic(line,line_class);
-				//break;
 			}
 		}
 		output += "\n";
@@ -959,7 +979,6 @@ public class MainStage {
 				break;
 			}
 		}
-		
 		return result;
 	}
 	
@@ -982,8 +1001,68 @@ public class MainStage {
 				}catch(Exception e) {}
 			}
 		}
-		
 		return result;
+	}
+	
+	private boolean ComparisonSyntaxChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
+		Stack<String> stack = new Stack<String>();
+		int exprCount = 0, opCount = 0, ANCount = 0;
+		boolean hasNewExpression = false;
+		
+		for(int i=0;i<classificationLine.size();i++) {
+			System.out.println("lexeme:"+lexemeLine.get(i));
+			
+			//if new expression found on same line
+			if(hasNewExpression) return false; 
+			
+			//if lexeme is ARITH OP Keyword
+			if(classificationLine.get(i).contains("Operation Keyword")) {
+				stack.add(classificationLine.get(i));
+				
+				//check if nested expression
+				if(i>0) exprCount++;
+			}
+			//if lexeme is AN
+			else if(classificationLine.get(i).equals("AN Keyword")) {
+				ANCount++;
+			}
+			//if lexeme is an operand
+			else if(classificationLine.get(i).contains("Literal") ||
+					identifiers.contains(lexemeLine.get(i))) {
+				opCount++;
+			}
+			//if lexeme is not classified, syntax error
+			else return false;
+			
+			//if there is more than one AN, syntax error
+			if(ANCount >= 2) return false;
+			//if there is more than two operand, syntax error
+			if(opCount > 2) return false;
+			
+			//if operands are two varident/literal or atleast one expr and atleast 1 operand and 1 AN
+			if((opCount == 2 && ANCount == 1) || (exprCount >= 1 && opCount >= 1 && ANCount == 1)) {
+				if(!stack.isEmpty()) {
+					if(stack.size() == 1) hasNewExpression = true;
+					stack.pop();
+					
+					//if there are 2 operand literal
+					if((opCount == 2 && ANCount == 1)) opCount = 0;
+					
+					//if nested operand
+					if(((exprCount >= 1 && opCount >= 1 && ANCount == 1))) {
+						opCount--;
+						exprCount--;
+					}
+					ANCount--;
+				}
+				//if stack is empty, syntax error
+				else return false;
+			}
+			System.out.println("expr:"+exprCount+"\nopcount:"+opCount+"\nancount:"+ANCount+"\n");
+		}	
+		//the conditions must be true to perform arithmetic operation
+		if(stack.isEmpty() && opCount == 0 && ANCount == 0 && exprCount == 0) return true;
+		else return false;
 	}
 	
 	private String evaluateComparison(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
@@ -1404,7 +1483,7 @@ public class MainStage {
 			}
 			
 			//if line has var assignment
-			if(line_class.contains("Assignment Keyword")) {												
+			else if(line_class.contains("Assignment Keyword")) {												
 				if(variableAssignmentSyntaxChecker(line, line_class)) {									//check if valid syntax
 					variableAssignment(line, line_class);												//perform variable assignment
 				}else {
@@ -1427,7 +1506,12 @@ public class MainStage {
 			}
 			//if line has comparison
 			else if(line_class.contains("Comparison Operation Keyword")) {
-				IT = evaluateComparison(line,line_class);
+				if(ComparisonSyntaxChecker(line,line_class)) {
+					IT = evaluateComparison(line,line_class);
+				}else {
+					printError(line_numByLine.get(i));													//if error found, print line number error then break
+					break;
+				}
 				//System.out.println("IT = " + IT);
 			}
 			//if line has boolean
