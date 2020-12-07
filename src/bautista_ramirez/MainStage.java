@@ -541,6 +541,66 @@ public class MainStage {
 //			}
 //		}
 //	}
+	private boolean ArithmeticSyntaxChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
+		Stack<String> stack = new Stack<String>();
+		int exprCount = 0, opCount = 0, ANCount = 0;
+		boolean hasNewExpression = false;
+		
+		for(int i=0;i<classificationLine.size();i++) {
+			System.out.println("lexeme:"+lexemeLine.get(i));
+			
+			//if new expression found on same line
+			if(hasNewExpression) return false; 
+			
+			//if lexeme is ARITH OP Keyword
+			if(classificationLine.get(i).equals("Arithmetic Operation Keyword")) {
+				stack.add(classificationLine.get(i));
+				
+				//check if nested expression
+				if(i>0) exprCount++;
+			}
+			//if lexeme is AN
+			else if(classificationLine.get(i).equals("AN Keyword")) {
+				ANCount++;
+			}
+			//if lexeme is an operand
+			else if(lexemeLine.get(i).matches("^(-?\\d*\\.\\d+)$") || 
+				lexemeLine.get(i).matches("^(-?\\d+)$") || identifiers.contains(lexemeLine.get(i))) {
+				opCount++;
+			}
+			//if lexeme is not classified, syntax error
+			else return false;
+			
+			//if there is more than one AN, syntax error
+			if(ANCount >= 2) return false;
+			//if there is more than two operand, syntax error
+			if(opCount > 2) return false;
+			
+			//if operands are two varident/literal or atleast one expr and atleast 1 operand and 1 AN
+			if((opCount == 2 && ANCount == 1) || (exprCount >= 1 && opCount >= 1 && ANCount == 1)) {
+				if(!stack.isEmpty()) {
+					if(stack.size() == 1) hasNewExpression = true;
+					stack.pop();
+					
+					//if there are 2 operand literal
+					if((opCount == 2 && ANCount == 1)) opCount = 0;
+					
+					//if nested operand
+					if(((exprCount >= 1 && opCount >= 1 && ANCount == 1))) {
+						opCount--;
+						exprCount--;
+					}
+					ANCount--;
+				}
+				//if stack is empty, syntax error
+				else return false;
+			}
+			System.out.println("expr:"+exprCount+"\nopcount:"+opCount+"\nancount:"+ANCount+"\n");
+		}	
+		//the conditions must be true to perform arithmetic operation
+		if(stack.isEmpty() && opCount == 0 && ANCount == 0 && exprCount == 0) return true;
+		else return false;
+	}
 	
 	private String evaluateArithmetic(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
 		Stack<Number> stack = new Stack<Number>();
@@ -1207,7 +1267,6 @@ public class MainStage {
 		}
 		//System.out.println("value = "+ value);
 		
-		
 		//set value of varident
 		for(int i=0;i<identifiers.size();i++) {
 			if(identifiers.get(i).equals(lexemeLine.get(0))) {
@@ -1324,7 +1383,10 @@ public class MainStage {
 		//varDecInit yung dati mong runProgram
 		//cinall ko lang para gumana yung with variable dec/ init
 		//pakipattern nalang parang sa baba para maayos hehe												
-																												
+		identifiers.add("IT");
+		values.add("NOOB");
+		
+		
 		//check every line statement/s
 		for(int i=0;i<lexemesByLine.size();i++) {
 			if (!skipList.isEmpty())
@@ -1375,7 +1437,13 @@ public class MainStage {
 			}
 			//if line has arithmetic
 			else if(line_class.contains("Arithmetic Operation Keyword")) {
-				IT = evaluateArithmetic(line,line_class);
+				//IT = evaluateArithmetic(line,line_class);
+				if(ArithmeticSyntaxChecker(line,line_class)) {											//check if valid syntax
+					IT = evaluateArithmetic(line,line_class);
+				}else {
+					printError(line_numByLine.get(i));													//if error found, print line number error then break
+					break;
+				}
 				//System.out.println("IT = " + IT);
 			}
 			//if line has if-else
