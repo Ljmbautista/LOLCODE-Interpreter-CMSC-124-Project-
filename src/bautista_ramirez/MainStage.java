@@ -764,21 +764,31 @@ public class MainStage {
 				
 				//look for index of last AN-<literal> pair
 				index = 0;
-				for(int j=i+2;j<line.size();j++) {
-					try {
-						System.out.println(line.get(j)+"::"+line.get(j+1));
-						if(line_class.get(j).equals("AN Keyword")) {
-							index = j+1;
-							shouldSkip = true;
-						}
-					}catch(Exception e) {}
+				if(line.contains("AN")) {
+					for(int j=i+2;j<line.size();j++) {
+						try {
+							System.out.println(line.get(j)+"::"+line.get(j+1));
+							if(line_class.get(j).equals("AN Keyword")) {
+								index = j+1;
+								shouldSkip = true;
+							}
+						}catch(Exception e) {}
+					}
+					for(int j=i;j<=index;j++) {
+						//add the only needed tokens for boolean
+						temp.add(line.get(j));
+						temp_class.add(line_class.get(j));
+					}
+				}else {
+					for(int j=i;j<line.size();j++) {
+						//add the only needed tokens for boolean
+						temp.add(line.get(j));
+						temp_class.add(line_class.get(j));
+					}
+					shouldSkip = true;
 				}
 				
-				for(int j=i;j<=index;j++) {
-					//add the only needed tokens for boolean
-					temp.add(line.get(j));
-					temp_class.add(line_class.get(j));
-				}
+				
 				output += evaluateBoolean(temp,temp_class);
 			}
 			//if comparison expression
@@ -1138,6 +1148,10 @@ public class MainStage {
 							}else if(values.get(k).equals("FAIL")) {									//FAIL
 								stack.push(values.get(identifiers.indexOf(line.get(j))));
 								datatype.push("boolean");
+							}else {
+								//else, assume that string
+								stack.push(values.get(identifiers.indexOf(line.get(j))));
+								datatype.push("string");
 							}
 						}
 					}
