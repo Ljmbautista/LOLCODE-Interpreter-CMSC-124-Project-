@@ -872,6 +872,116 @@ public class MainStage {
 		
 	}
 	
+	private boolean BooleanSyntaxChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
+		
+		if(lexemeLine.get(0).equals("NOT")){
+			//if one liner NOT
+			System.out.println(lexemeLine.toString());
+			//line should only have 2 lexemes NOT <op>
+			if(lexemeLine.size()>2) return false;
+			if(classificationLine.get(1).contains("Literal") || classificationLine.get(1).contains("Identifier")) {
+				//check if operand is of type TROOF
+				if(classificationLine.get(1).contains("Identifier")) {
+					//if varident
+					if(!(values.get(identifiers.indexOf(lexemeLine.get(1))).equals("WIN") ||
+							values.get(identifiers.indexOf(lexemeLine.get(1))).equals("FAIL"))) {
+						return false;
+					}
+				}else {
+					//if literal
+					if(!(lexemeLine.get(1).contains("WIN") || 
+						lexemeLine.get(1).contains("FAIL"))) return false;
+				}
+			}
+			//if no syntax error, return true
+			return true;
+		}
+		else if(lexemeLine.contains("ALL OF") || lexemeLine.contains("ANY OF")) {
+			//infinite arity syntax checker
+			
+			
+			return true;
+		}else {
+			//nested boolean op
+			Stack<String> stack = new Stack<String>();
+			int exprCount = 0, opCount = 0, ANCount = 0;
+			boolean hasNewExpression = false;
+			
+			ArrayList<String> l = (ArrayList<String>) lexemeLine.clone();
+			ArrayList<String> c = (ArrayList<String>) classificationLine.clone();
+			
+			
+			//remove string delimiter from the arraylists
+			for(int i=0;i<l.size();i++) {
+				if(l.get(i).equals("\"")) {
+					l.remove(i);
+				}
+				if(c.get(i).equals("String Delimiter")) {
+					c.remove(i);
+				}
+			}
+			
+			for(int i=0;i<c.size();i++) {
+				System.out.println("lexeme:"+l.get(i));
+				
+				//if new expression found on same line
+				if(hasNewExpression) return false; 
+				
+				//if lexeme is NOT 
+				if(l.get(i).contains("NOT")) {
+					//if(ANCount < 1) return false;
+				}
+				//if lexeme is ARITH OP Keyword
+				else if(c.get(i).contains("Operation Keyword")) {
+					stack.add(c.get(i));
+					
+					//check if nested expression
+					if(i>0) exprCount++;
+				}
+				//if lexeme is AN
+				else if(c.get(i).equals("AN Keyword")) {
+					ANCount++;
+				}
+				//if lexeme is an operand
+				else if(c.get(i).contains("Literal") ||
+						identifiers.contains(l.get(i))) {
+					opCount++;
+				}
+				//if lexeme is not classified, syntax error
+				else return false;
+				
+				//if there is more than one AN, syntax error
+				if(ANCount >= 2) return false;
+				//if there is more than two operand, syntax error
+				if(opCount > 2) return false;
+				
+				//if operands are two varident/literal or atleast one expr and atleast 1 operand and 1 AN
+				if((opCount == 2 && ANCount == 1) || (exprCount >= 1 && opCount >= 1 && ANCount == 1)) {
+					if(!stack.isEmpty()) {
+						if(stack.size() == 1) hasNewExpression = true;
+						stack.pop();
+						
+						//if there are 2 operand literal
+						if((opCount == 2 && ANCount == 1)) opCount = 0;
+						
+						//if nested operand
+						if(((exprCount >= 1 && opCount >= 1 && ANCount == 1))) {
+							opCount--;
+							exprCount--;
+						}
+						ANCount--;
+					}
+					//if stack is empty, syntax error
+					else return false;
+				}
+				System.out.println("expr:"+exprCount+"\nopcount:"+opCount+"\nancount:"+ANCount+"\n");
+			}	
+			//the conditions must be true to perform arithmetic operation
+			if(stack.isEmpty() && opCount == 0 && ANCount == 0 && exprCount == 0) return true;
+			else return false;
+		}
+	}
+	
 	private String evaluateBoolean(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {			//function for boolean operation
 		//1 = WIN
 		//0 = FAIL
@@ -1637,7 +1747,13 @@ public class MainStage {
 			}
 			//if line has boolean
 			else if(line_class.contains("Boolean Operation Keyword")) {
-				IT = evaluateBoolean(line,line_class);
+				if(BooleanSyntaxChecker(line,line_class)) {
+					IT = evaluateBoolean(line,line_class);
+				}else {
+					printError(line_numByLine.get(i));													//if error found, print line number error then break
+					break;
+				}
+				
 				//System.out.println("IT = " + IT);
 			}
 			//if line has arithmetic
