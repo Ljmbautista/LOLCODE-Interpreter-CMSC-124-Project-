@@ -1009,26 +1009,40 @@ public class MainStage {
 		int exprCount = 0, opCount = 0, ANCount = 0;
 		boolean hasNewExpression = false;
 		
-		for(int i=0;i<classificationLine.size();i++) {
-			System.out.println("lexeme:"+lexemeLine.get(i));
+		ArrayList<String> l = (ArrayList<String>) lexemeLine.clone();
+		ArrayList<String> c = (ArrayList<String>) classificationLine.clone();
+		
+		
+		//remove string delimiter from the arraylists
+		for(int i=0;i<l.size();i++) {
+			if(l.get(i).equals("\"")) {
+				l.remove(i);
+			}
+			if(c.get(i).equals("String Delimiter")) {
+				c.remove(i);
+			}
+		}
+		
+		for(int i=0;i<c.size();i++) {
+			System.out.println("lexeme:"+l.get(i));
 			
 			//if new expression found on same line
 			if(hasNewExpression) return false; 
 			
 			//if lexeme is ARITH OP Keyword
-			if(classificationLine.get(i).contains("Operation Keyword")) {
-				stack.add(classificationLine.get(i));
+			if(c.get(i).contains("Operation Keyword")) {
+				stack.add(c.get(i));
 				
 				//check if nested expression
 				if(i>0) exprCount++;
 			}
 			//if lexeme is AN
-			else if(classificationLine.get(i).equals("AN Keyword")) {
+			else if(c.get(i).equals("AN Keyword")) {
 				ANCount++;
 			}
 			//if lexeme is an operand
-			else if(classificationLine.get(i).contains("Literal") ||
-					identifiers.contains(lexemeLine.get(i))) {
+			else if(c.get(i).contains("Literal") ||
+					identifiers.contains(l.get(i))) {
 				opCount++;
 			}
 			//if lexeme is not classified, syntax error
@@ -1453,6 +1467,87 @@ public class MainStage {
 		return skip;
 	}
 	
+	private String evaluateConcat(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {			//function for string concatenation
+		String result = "";
+		
+		for(int i=0;i<lexemeLine.size();i++) {
+			//if literal
+			if(classificationLine.get(i).contains("Literal")) {
+				result += lexemeLine.get(i);
+			}
+			//if varident
+			else if(classificationLine.get(i).contains("Identifier")) {
+				result += values.get(identifiers.indexOf(lexemeLine.get(i)));
+			}
+			//else ignore
+		}
+		//update IT variable
+		for(int i=0;i<identifiers.size();i++) {
+			if(identifiers.get(i).equals("IT")) {
+				//update value of IT
+				values.set(i, result.toString());
+				break;
+			}
+		}
+		return result;
+	}
+	
+	private boolean ConcatSyntaxChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
+		int opCount = 0, ANCount = 0;
+		
+		ArrayList<String> l = (ArrayList<String>) lexemeLine.clone();
+		ArrayList<String> c = (ArrayList<String>) classificationLine.clone();
+		
+		
+		//remove string delimiter from the arraylists
+		for(int i=0;i<l.size();i++) {
+			if(l.get(i).equals("\"")) {
+				l.remove(i);
+			}
+			if(c.get(i).equals("String Delimiter")) {
+				c.remove(i);
+			}
+		}
+		
+		//the last element should be a literal/varident
+		if(!(c.get(l.size()-1).contains("Literal") || 
+			c.get(l.size()-1).contains("Identifier") || 
+			c.get(l.size()-1).contains("String Delimiter"))) return false;
+		//the line should at least have 4 lexemes
+		if(l.size()<4) return false;
+		//should only have one SMOOSH which should be at the start
+		if(Collections.frequency(l, "SMOOSH") > 1 || 
+			!l.get(0).equals("SMOOSH")) return false;
+		
+		
+		//check literal-AN pair
+		for(int i=1;i<l.size();i++) {
+			if(c.get(i).contains("AN Keyword")) {
+				try{
+					boolean op1 = false;
+					boolean op2 = false;
+					
+					System.out.println("op1:"+c.get(i-1));
+					System.out.println("op2:"+c.get(i+1));
+					if(c.get(i-1).contains("Literal") ||
+							c.get(i-1).contains("Identifier")) {
+						op1 = true;
+					}
+					if(c.get(i+1).contains("Literal") ||
+							c.get(i+1).contains("Identifier")) {
+						op2 = true;
+					}
+					System.out.println("abot5");
+					if(op1==false || op2==false) return false; 
+				}
+				catch(Exception e) {return false;}
+			}
+		}
+		
+		//if no error, valid syntax
+		return true;
+	}
+	
 	private void runProgram() {																		//function for execute button
 		String IT = "";
 		String output = "";
@@ -1464,7 +1559,6 @@ public class MainStage {
 		//pakipattern nalang parang sa baba para maayos hehe												
 		identifiers.add("IT");
 		values.add("NOOB");
-		
 		
 		//check every line statement/s
 		for(int i=0;i<lexemesByLine.size();i++) {
@@ -1539,6 +1633,16 @@ public class MainStage {
 			else if(line_class.contains("Switch-Case Delimiter")) {
 				newSkips = evaluateSwitch(values.get(identifiers.indexOf("IT")),i,lexemesByLine,classificationByLine);
 				newSkips.forEach(skipList::add);
+			}
+			//if line has SMOOSH (concat)
+			else if(line_class.contains("Concatenation Operation Keyword")) {
+				if(ConcatSyntaxChecker(line,line_class)) {
+					IT = evaluateConcat(line,line_class);
+				}else {
+					printError(line_numByLine.get(i));													//if error found, print line number error then break
+					break;
+				}
+				
 			}
 			
 			setTerminal(output);						//print current status of terminal
