@@ -780,6 +780,31 @@ public class MainStage {
 		
 	}
 	
+	private String specialCharacterChecker(String s) {												//function for special characters in string/yarn
+		//:) - newline
+		if(s.contains(":)")) {
+			s = s.replaceAll("\\:\\)", "\n");
+		}
+		//:> - tab
+		if(s.contains(":>")) {
+			s = s.replaceAll("\\:\\>", "\t");
+		}
+		//:> - g
+		if(s.contains(":o")) {
+			s = s.replaceAll("\\:o", "g");
+		}
+		//:" - "
+		if(s.contains(":\"")) {
+			s = s.replaceAll("\\:\"", "\"");
+		}
+		//:: - :
+		if(s.contains("::")) {
+			s = s.replaceAll("\\:\\:", ":");
+		}
+		
+		return s;
+	}
+	
 	private String printVisible(ArrayList<String> line, ArrayList<String> line_class) {							//function for printing to terminal
 		String output = "";
 		System.out.println("line: "+line.toString());
@@ -798,11 +823,11 @@ public class MainStage {
 			if (line_class.get(i).equals("Variable Identifier") || 
 				line_class.get(i).equals("Implicit Variable")) {
 				//get the value of the varident
-				output += values.get(identifiers.indexOf(line.get(i))).toString();
+				output += specialCharacterChecker(values.get(identifiers.indexOf(line.get(i))).toString());
 			}
 			//if visible literal
 			else if (line_class.get(i).contains("Literal")) {
-				output += line.get(i).toString();
+				output += specialCharacterChecker(line.get(i).toString());
 			}
 			//if boolean expression
 			else if(line_class.get(i).contains("Boolean Operation Keyword")) {
