@@ -565,7 +565,7 @@ public class MainStage {
 				ANCount++;
 			}
 			//if lexeme is an operand
-			else if(l.get(i).matches("^(-?\\d*\\.\\d+)$") || 
+			else if(l.get(i).matches("^(-?\\d*\\.\\d+)$") || l.get(i).contains("WIN") || l.get(i).contains("FAIL") || 	
 				l.get(i).matches("^(-?\\d+)$") || identifiers.contains(l.get(i))) {
 				opCount++;
 			}
@@ -617,7 +617,12 @@ public class MainStage {
 				stack.push(Float.parseFloat(line.get(j)));
 			}else if(line.get(j).matches("^(-?\\d+)$")) {												//integer/numbr
 				stack.push(Integer.parseInt(line.get(j)));
-			}else if(line_class.get(j).equals("Arithmetic Operation Keyword")){							//if operator
+			}else if(line.get(j).contains("WIN")) {														//WIN - typecast to 1
+				stack.push(1);
+			}else if(line.get(j).contains("FAIL")) {													//FAIL - typecast to 0
+				stack.push(0);
+			}
+			else if(line_class.get(j).equals("Arithmetic Operation Keyword")){							//if operator
 				boolean isFloat = false;
 				Number op1 = stack.pop();
 				Number op2 = stack.pop();
@@ -683,6 +688,10 @@ public class MainStage {
 							stack.push(Float.parseFloat(values.get(k)));
 						}else if(values.get(k).matches("^(-?\\d+)$")) {				//integer/numbr
 							stack.push(Integer.parseInt(values.get(k)));
+						}else if(values.get(k).contains("WIN")) {
+							stack.push(1);
+						}else if(values.get(k).contains("FAIL")) {
+							stack.push(0);
 						}
 					}
 				}
@@ -949,111 +958,103 @@ public class MainStage {
 	}
 	
 	private boolean BooleanSyntaxChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
+
+		ArrayList<String> l = (ArrayList<String>) lexemeLine.clone();
+		ArrayList<String> c = (ArrayList<String>) classificationLine.clone();
 		
-		if(lexemeLine.get(0).equals("NOT")){
+		//remove string delimiter from the arraylists
+		for(int i=0;i<l.size();i++) {
+			if(l.get(i).equals("\"")) {
+				l.remove(i);
+			}
+			if(c.get(i).equals("String Delimiter")) {
+				c.remove(i);
+			}
+		}
+		
+		if(l.get(0).equals("NOT")){
 			//if one liner NOT
-			System.out.println(lexemeLine.toString());
+			System.out.println(l.toString());
 			//line should only have 2 lexemes NOT <op>
-			if(lexemeLine.size()>2) return false;
-			if(classificationLine.get(1).contains("Literal") || classificationLine.get(1).contains("Identifier")) {
+			if(l.size()>2) return false;
+			if(c.get(1).contains("Literal") || c.get(1).contains("Identifier")) {
 				//check if operand is of type TROOF
 				if(classificationLine.get(1).contains("Identifier")) {
 					//if varident
-					if(!(values.get(identifiers.indexOf(lexemeLine.get(1))).equals("WIN") ||
-							values.get(identifiers.indexOf(lexemeLine.get(1))).equals("FAIL"))) {
+					if(!(values.get(identifiers.indexOf(l.get(1))).equals("WIN") ||
+							values.get(identifiers.indexOf(l.get(1))).equals("FAIL"))) {
 						return false;
 					}
 				}else {
 					//if literal
-					if(!(lexemeLine.get(1).contains("WIN") || 
-						lexemeLine.get(1).contains("FAIL"))) return false;
+					if(!(l.get(1).contains("WIN") || 
+						l.get(1).contains("FAIL") || 
+						c.get(1).contains("Literal"))) return false;
 				}
 			}
 			//if no syntax error, return true
 			return true;
 		}
-		else if(lexemeLine.contains("ALL OF") || lexemeLine.contains("ANY OF")) {
+		else if(l.contains("ALL OF") || l.contains("ANY OF")) {
 			//infinite arity syntax checker
 			
 			//there should only be one instance of ALL OF/ANY OF
-			if(Collections.frequency(lexemeLine, "ALL OF")>1) return false;
-			if(Collections.frequency(lexemeLine, "ANY OF")>1) return false;
+			if(Collections.frequency(l, "ALL OF")>1) return false;
+			if(Collections.frequency(l, "ANY OF")>1) return false;
 			
 			//ALL OF/ANY OF should be the first lexeme
-			if(!lexemeLine.isEmpty()) {
-				if(!(lexemeLine.get(0).equals("ALL OF") || lexemeLine.get(0).equals("ANY OF"))) return false;
+			if(!l.isEmpty()) {
+				if(!(l.get(0).equals("ALL OF") || l.get(0).equals("ANY OF"))) return false;
 			}
 			
 			//there should be a MKAY delimiter
-			if(!lexemeLine.get(lexemeLine.size()-1).equals("MKAY")) return false;
-			
-			//check syntax by lexeme
-			ArrayList<String> l = (ArrayList<String>) lexemeLine.clone();
-			ArrayList<String> c = (ArrayList<String>) classificationLine.clone();
-			
-			
-			//remove string delimiter from the arraylists
-			for(int i=0;i<l.size();i++) {
-				if(l.get(i).equals("\"")) {
-					l.remove(i);
-				}
-				if(c.get(i).equals("String Delimiter")) {
-					c.remove(i);
-				}
-			}
-			
-			int exprCount = 0, opCount = 0, ANCount = 0, notCount = 0;
-			for(int i=1;i<(c.size()-1);i++) {
-				//if lexeme is NOT 
-				if(l.get(i).contains("NOT")) {
-					notCount++;
-				}
-				//if lexeme is OP Keyword
-				else if(c.get(i).contains("Operation Keyword")) {
-					exprCount++;
-				}
-				//if lexeme is AN
-				else if(c.get(i).equals("AN Keyword")) {
-					ANCount++;
-				}
-				//if lexeme is an operand
-				else if(c.get(i).contains("Literal") ||
-						identifiers.contains(l.get(i))) {
-					opCount++;
-				}
-				//if lexeme is not classified, syntax error
-				else return false;
-				
-				if(!(ANCount<=1)) return false;
-				else ANCount = 0;
-				if(!(opCount<=1)) return false;
-				else opCount = 0;
-				if(!(notCount<=1)) return false;
-				else notCount = 0;
-			}
-			
+			if(!l.get(l.size()-1).equals("MKAY")) return false;
 			
 			//else no error, return true
 			return true;
-		}else {
+			
+//			int exprCount = 0, opCount = 0, ANCount = 0, notCount = 0;
+//			for(int i=1;i<(c.size()-1);i++) {
+//				//if lexeme is NOT 
+//				if(l.get(i).contains("NOT")) {
+//					notCount++;
+//				}
+//				//if lexeme is OP Keyword
+//				else if(c.get(i).contains("Operation Keyword")) {
+//					exprCount++;
+//				}
+//				//if lexeme is AN
+//				else if(c.get(i).equals("AN Keyword")) {
+//					ANCount++;
+//				}
+//				//if lexeme is an operand
+//				else if(c.get(i).contains("Literal") ||
+//						identifiers.contains(l.get(i))) {
+//					opCount++;
+//				}
+//				//if lexeme is not classified, syntax error
+//				else return false;
+//				
+//				if(ANCount!=0) {
+//					if(!(ANCount<=1)) return false;
+//					else ANCount = 0;
+//				}
+//				if(opCount!=0) {
+//					if(!(opCount<=1)) return false;
+//					else opCount = 0;
+//				}
+//				if(notCount!=0) {
+//					if(!(notCount<=1)) return false;
+//					else ANCount = 0;
+//				}
+//			}
+			
+		}
+		else {
 			//nested boolean op
 			Stack<String> stack = new Stack<String>();
 			int exprCount = 0, opCount = 0, ANCount = 0;
 			boolean hasNewExpression = false;
-			
-			ArrayList<String> l = (ArrayList<String>) lexemeLine.clone();
-			ArrayList<String> c = (ArrayList<String>) classificationLine.clone();
-			
-			
-			//remove string delimiter from the arraylists
-			for(int i=0;i<l.size();i++) {
-				if(l.get(i).equals("\"")) {
-					l.remove(i);
-				}
-				if(c.get(i).equals("String Delimiter")) {
-					c.remove(i);
-				}
-			}
 			
 			for(int i=0;i<c.size();i++) {
 				System.out.println("lexeme:"+l.get(i));
@@ -1127,6 +1128,8 @@ public class MainStage {
 		ArrayList<String> line_class = (ArrayList<String>) classificationLine.clone();							//get the reverse of each line_class
 		Collections.reverse(line_class);
 		
+		
+		
 		for(int j=0;j<line.size();j++) {
 			System.out.println("stack:"+stack.toString());
 			//if WIN[true]
@@ -1136,6 +1139,10 @@ public class MainStage {
 			//if FAIL[false]
 			else if(line.get(j).equals("FAIL")) {
 				stack.push(false);
+			}
+			//if string/numbr/numbar typecast to WIN
+			else if(line_class.get(j).contains("Literal")) {
+				stack.push(true);
 			}
 			//if NOT
 			else if(line.get(j).equals("NOT")) {						//not
@@ -1173,9 +1180,9 @@ public class MainStage {
 			else if(identifiers.contains(line.get(j))) {				//if varident
 				for(int k=0;k<identifiers.size();k++) {
 					if(identifiers.get(k).equals(line.get(j))) {
-						if(values.get(k).equals("WIN")) {
-							stack.push(true);
-						}else stack.push(false);
+						if(values.get(k).equals("FAIL")) {
+							stack.push(false);
+						}else stack.push(true);
 					}
 				}
 			}
@@ -1885,7 +1892,7 @@ public class MainStage {
 			//if line has boolean
 			else if(line_class.contains("Boolean Operation Keyword")) {
 				if(BooleanSyntaxChecker(line,line_class)) {
-					IT = evaluateBoolean(line,line_class);
+						IT = evaluateBoolean(line,line_class);
 				}else {
 					printError(line_numByLine.get(i));													//if error found, print line number error then break
 					break;
