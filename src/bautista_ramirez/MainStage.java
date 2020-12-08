@@ -987,6 +987,52 @@ public class MainStage {
 			//there should be a MKAY delimiter
 			if(!lexemeLine.get(lexemeLine.size()-1).equals("MKAY")) return false;
 			
+			//check syntax by lexeme
+			ArrayList<String> l = (ArrayList<String>) lexemeLine.clone();
+			ArrayList<String> c = (ArrayList<String>) classificationLine.clone();
+			
+			
+			//remove string delimiter from the arraylists
+			for(int i=0;i<l.size();i++) {
+				if(l.get(i).equals("\"")) {
+					l.remove(i);
+				}
+				if(c.get(i).equals("String Delimiter")) {
+					c.remove(i);
+				}
+			}
+			
+			int exprCount = 0, opCount = 0, ANCount = 0, notCount = 0;
+			for(int i=1;i<(c.size()-1);i++) {
+				//if lexeme is NOT 
+				if(l.get(i).contains("NOT")) {
+					notCount++;
+				}
+				//if lexeme is OP Keyword
+				else if(c.get(i).contains("Operation Keyword")) {
+					exprCount++;
+				}
+				//if lexeme is AN
+				else if(c.get(i).equals("AN Keyword")) {
+					ANCount++;
+				}
+				//if lexeme is an operand
+				else if(c.get(i).contains("Literal") ||
+						identifiers.contains(l.get(i))) {
+					opCount++;
+				}
+				//if lexeme is not classified, syntax error
+				else return false;
+				
+				if(!(ANCount<=1)) return false;
+				else ANCount = 0;
+				if(!(opCount<=1)) return false;
+				else opCount = 0;
+				if(!(notCount<=1)) return false;
+				else notCount = 0;
+			}
+			
+			
 			//else no error, return true
 			return true;
 		}else {
