@@ -234,6 +234,10 @@ public class MainStage {
 			addLexeme(s,"Boolean Operation Keyword");
 			s = "";
 		}
+		else if(s.matches("^(MKAY)$")) {
+			addLexeme(s,"Boolean Operation Delimiter");
+			s = "";
+		}
 		else if(s.matches("^(BOTH SAEM)$")) {
 			addLexeme(s,"Comparison Operation Keyword");
 			s = "";
@@ -971,7 +975,19 @@ public class MainStage {
 		else if(lexemeLine.contains("ALL OF") || lexemeLine.contains("ANY OF")) {
 			//infinite arity syntax checker
 			
+			//there should only be one instance of ALL OF/ANY OF
+			if(Collections.frequency(lexemeLine, "ALL OF")>1) return false;
+			if(Collections.frequency(lexemeLine, "ANY OF")>1) return false;
 			
+			//ALL OF/ANY OF should be the first lexeme
+			if(!lexemeLine.isEmpty()) {
+				if(!(lexemeLine.get(0).equals("ALL OF") || lexemeLine.get(0).equals("ANY OF"))) return false;
+			}
+			
+			//there should be a MKAY delimiter
+			if(!lexemeLine.get(lexemeLine.size()-1).equals("MKAY")) return false;
+			
+			//else no error, return true
 			return true;
 		}else {
 			//nested boolean op
