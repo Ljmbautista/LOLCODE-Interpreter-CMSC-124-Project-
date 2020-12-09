@@ -1010,45 +1010,47 @@ public class MainStage {
 			//there should be a MKAY delimiter
 			if(!l.get(l.size()-1).equals("MKAY")) return false;
 			
+			
+			//check every lexeme
+			for(int i=1;i<(l.size()-1);i++) {
+				//if last element
+				if(i==(l.size()-2)) {
+					//last element should not be AN or OPERATOR
+					if(l.get(i).equals("AN") || c.get(i).contains("Operation Keyword")) return false;
+				}
+				//if NOT
+				else if(l.get(i).contains("NOT")) {
+					//must be followed by a literal / operator
+					if(!(c.get(i+1).contains("Literal") || identifiers.contains(l.get(i+1)) || c.get(i+1).contains("Operation Keyword"))) {
+						return false;
+					}
+				}
+				//if literal
+				else if(c.get(i).contains("Literal") ||
+						identifiers.contains(l.get(i))) {
+					//a literal should be follwed by AN
+					if(!l.get(i+1).equals("AN")) return false;
+				}
+				//if operator
+				else if(c.get(i).contains("Operation Keyword")) {
+					//an operator must be followed by a literal/operator
+					if(!(c.get(i+1).contains("Literal") || identifiers.contains(l.get(i+1)) || c.get(i+1).contains("Operation Keyword"))) {
+						return false;
+					}
+					//if an operator is found, there should be at least 3 lexeme after
+					if(((l.size()-2)-i) < 3) return false;
+				}
+				//if AN
+				else if(c.get(i).contains("AN")) {
+					//must be followed by a literal / operator
+					if(!(c.get(i+1).contains("Literal") || identifiers.contains(l.get(i+1)) || c.get(i+1).contains("Operation Keyword"))) {
+						return false;
+					}
+				}
+			}
+			
 			//else no error, return true
 			return true;
-			
-//			int exprCount = 0, opCount = 0, ANCount = 0, notCount = 0;
-//			for(int i=1;i<(c.size()-1);i++) {
-//				//if lexeme is NOT 
-//				if(l.get(i).contains("NOT")) {
-//					notCount++;
-//				}
-//				//if lexeme is OP Keyword
-//				else if(c.get(i).contains("Operation Keyword")) {
-//					exprCount++;
-//				}
-//				//if lexeme is AN
-//				else if(c.get(i).equals("AN Keyword")) {
-//					ANCount++;
-//				}
-//				//if lexeme is an operand
-//				else if(c.get(i).contains("Literal") ||
-//						identifiers.contains(l.get(i))) {
-//					opCount++;
-//				}
-//				//if lexeme is not classified, syntax error
-//				else return false;
-//				
-//				if(ANCount!=0) {
-//					if(!(ANCount<=1)) return false;
-//					else ANCount = 0;
-//				}
-//				if(opCount!=0) {
-//					if(!(opCount<=1)) return false;
-//					else opCount = 0;
-//				}
-//				if(notCount!=0) {
-//					if(!(notCount<=1)) return false;
-//					else ANCount = 0;
-//				}
-//			}
-			
 		}
 		else {
 			//nested boolean op
