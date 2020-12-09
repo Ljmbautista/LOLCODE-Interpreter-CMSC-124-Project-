@@ -1,5 +1,5 @@
-#Project Name: LOLCode Interpreter
-
+# Project Name: LOLCode Interpreter
+-----------------------------------------------------------------
 [!] Dependencies: 
 	- Extract the BOTTLENGEK_T5L.zip file.
 	- Install Eclipse IDE for the program to run smoothly. 
