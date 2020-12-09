@@ -421,22 +421,25 @@ public class MainStage {
 		}
 		return s;
 	}	
+	
 	public void hasHAI() {																	//function for checking if has opening code delimiter
 		//the code must be start with HAI
 		if(lexemes.size() != 0 && lexemes.get(0).matches("HAI") == false) 
 			hasSyntaxError = true;
 	}
+	
 	public void hasKTHXBYE(){																//function for checking if has closing code delimiter
 		//the code must be delimited by KTHXBYE
 		if(lexemes.get(lexemes.size()-1).matches("KTHXBYE") == false) {
 			hasSyntaxError = true;
 		}
-			
 	}	
+	
 	private void addLiteralSymbol(String identifier, String value) {						//function for adding symbols				
 		identifiers.add(identifier);
 		values.add(value);
 	}
+	
 	private boolean isComment(String str) {													//function checker if comment
 		//check if string is a comment
 		if(str.matches("^(OBTW)$")) hasMultiLineComment = true;								
@@ -446,6 +449,7 @@ public class MainStage {
 		//else not a comment
 		else return false;
 	}	
+	
 	private void setLexemeTable() {															//function for adding elements to Lexeme TableView
 		//printing of lexemes lexemeTable
 		ObservableList<Lexeme> lexTable = FXCollections.observableArrayList();
@@ -508,7 +512,7 @@ public class MainStage {
 	    }
 	}
 	private void setSymbolTable() {															//function for setting symbol table (GUI)
-		System.out.println("\n=======SYMBOL TABLE======");
+		
 		if(identifiers.size()!=0) {
 			//updating symbol table
 			ObservableList<Identifier> symTable = FXCollections.observableArrayList();
@@ -519,6 +523,7 @@ public class MainStage {
 			
 			
 			//printing
+			System.out.println("\n=======SYMBOL TABLE======");
 			for(int i=0;i<identifiers.size();i++) {
 				System.out.println(identifiers.get(i) + " = "+ values.get(i));
 			}
@@ -526,11 +531,11 @@ public class MainStage {
 		}
 	}
 	
-	//function for arithmetic syntax checking
+	//function for arithmetic syntax checking using STACK
 	private boolean ArithmeticSyntaxChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
 		Stack<String> stack = new Stack<String>();
 		int exprCount = 0, opCount = 0, ANCount = 0;
-		boolean hasNewExpression = false;
+		boolean hasNewExpression = false;					//flag if new expression found
 		
 		ArrayList<String> l = (ArrayList<String>) lexemeLine.clone();
 		ArrayList<String> c = (ArrayList<String>) classificationLine.clone();
@@ -545,9 +550,8 @@ public class MainStage {
 			}
 		}
 		
+		//check every lexeme if they are valid lexeme for arithmetic op
 		for(int i=0;i<c.size();i++) {
-			System.out.println("lexeme:"+l.get(i));
-			
 			//if new expression found on same line
 			if(hasNewExpression) return false; 
 			
@@ -562,9 +566,9 @@ public class MainStage {
 			else if(c.get(i).equals("AN Keyword")) {
 				ANCount++;
 			}
-			//if lexeme is an operand
-			else if(l.get(i).matches("^(-?\\d*\\.\\d+)$") || l.get(i).contains("WIN") || l.get(i).contains("FAIL") || 	
-				l.get(i).matches("^(-?\\d+)$") || identifiers.contains(l.get(i))) {
+			//if lexeme is an operand (literal/varident)
+			else if(isFloat(l.get(i)) || l.get(i).contains("WIN") || l.get(i).contains("FAIL") || 	
+				isInteger(l.get(i)) || identifiers.contains(l.get(i))) {
 				opCount++;
 			}
 			//if lexeme is not classified, syntax error
@@ -575,13 +579,16 @@ public class MainStage {
 			//if there is more than two operand, syntax error
 			if(opCount > 2) return false;
 			
-			//if operands are two varident/literal or atleast one expr and atleast 1 operand and 1 AN
+			//if operands are two varident/literal or atleast one expr and atleast 1 operand and 1 AN (nested op)
 			if((opCount == 2 && ANCount == 1) || (exprCount >= 1 && opCount >= 1 && ANCount == 1)) {
 				if(!stack.isEmpty()) {
+					//if the previous condition is true, there is a new expression found : error
 					if(stack.size() == 1) hasNewExpression = true;
+					
+					//else, valid syntax for current expression
 					stack.pop();
 					
-					//if there are 2 operand literal
+					//if there are 2 literal operand
 					if((opCount == 2 && ANCount == 1)) opCount = 0;
 					
 					//if nested operand
@@ -596,8 +603,19 @@ public class MainStage {
 			}
 			System.out.println("expr:"+exprCount+"\nopcount:"+opCount+"\nancount:"+ANCount+"\n");
 		}	
+		
 		//the conditions must be true to perform arithmetic operation
 		if(stack.isEmpty() && opCount == 0 && ANCount == 0 && exprCount == 0) return true;
+		else return false;
+	}
+	
+	private boolean isFloat(String s) {													//function for checking if float
+		if(s.matches("^(-?\\d*\\.\\d+)$")) return true;
+		else return false;
+	}
+	
+	private boolean isInteger(String s) {												//function for checking if integer
+		if(s.matches("^(-?\\d+)$")) return true;
 		else return false;
 	}
 	
@@ -605,29 +623,39 @@ public class MainStage {
 	private String evaluateArithmetic(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
 		Stack<Number> stack = new Stack<Number>();
 		
-		ArrayList<String> line = (ArrayList<String>) lexemeLine.clone();								//get the reverse of each line
-		Collections.reverse(line);
-		ArrayList<String> line_class = (ArrayList<String>) classificationLine.clone();					//get the reverse of each line_class
-		Collections.reverse(line_class);
+		ArrayList<String> line = (ArrayList<String>) lexemeLine.clone();	
+		ArrayList<String> line_class = (ArrayList<String>) classificationLine.clone();	
 		
-		for(int j=0;j<lexemeLine.size();j++) {															//for every token of a line
-			System.out.println("stack: "+stack.toString());
-			if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {												//float/numbar
+		Collections.reverse(line);			//get the reverse of each line
+		Collections.reverse(line_class);	//get the reverse of each line_class
+		
+		for(int j=0;j<lexemeLine.size();j++) {		
+			//if float/numbar literal
+			if(isFloat(line.get(j))) {									
 				stack.push(Float.parseFloat(line.get(j)));
-			}else if(line.get(j).matches("^(-?\\d+)$")) {												//integer/numbr
-				stack.push(Integer.parseInt(line.get(j)));
-			}else if(line.get(j).contains("WIN")) {														//WIN - typecast to 1
-				stack.push(1);
-			}else if(line.get(j).contains("FAIL")) {													//FAIL - typecast to 0
-				stack.push(0);
 			}
-			else if(line_class.get(j).equals("Arithmetic Operation Keyword")){							//if operator
+			//if integer/numbr literal
+			else if(isInteger(line.get(j))) {							
+				stack.push(Integer.parseInt(line.get(j)));
+			}
+			//extra credit
+			//if TROOF literal
+			else if(line.get(j).contains("WIN")) {						
+				stack.push(1);			//WIN - typecast to 1
+			}else if(line.get(j).contains("FAIL")) {					
+				stack.push(0);			//FAIL - typecast to 0
+			}
+			//end-of-extra-credit
+			
+			//if operator keyword
+			else if(line_class.get(j).equals("Arithmetic Operation Keyword")){							
 				boolean isFloat = false;
 				Number op1 = stack.pop();
 				Number op2 = stack.pop();
 				
-				if(op1 instanceof Float || op2 instanceof Float) isFloat = true;						//check if float
-				if(isFloat) {																			//if isFloat, the result must also be float/numbar
+				if(op1 instanceof Float || op2 instanceof Float) isFloat = true;						
+				if(isFloat) {																		//if isFloat, the result must also be float/numbar
+					
 					if(line.get(j).matches("^(SUM OF)$")) {					//addition
 						stack.push(op1.floatValue() + op2.floatValue());
 					}
@@ -653,7 +681,7 @@ public class MainStage {
 							stack.push(op1.floatValue());
 						}else stack.push(op2.floatValue());
 					}
-				}else {	//if !isFloat, the result must be an integer/numbr
+				}else {																				//if !isFloat, the result must be an integer/numbr
 					if(line.get(j).matches("^(SUM OF)$")) {					//addition
 						stack.push(op1.intValue() + op2.intValue());
 					}
@@ -680,23 +708,29 @@ public class MainStage {
 						}else stack.push(op2.intValue());
 					}
 				}
-			}else if(identifiers.contains(line.get(j))) {													//if varident
+			}
+			//if varident - get its value
+			else if(identifiers.contains(line.get(j))) {													
 				for(int k=0;k<identifiers.size();k++) {
 					if(identifiers.get(k).equals(line.get(j))) {
-						if(values.get(k).matches("^(-?\\d*\\.\\d+)$")) {			//float/numbar
+						if(isFloat(values.get(k))) {								//float/numbar
 							stack.push(Float.parseFloat(values.get(k)));
-						}else if(values.get(k).matches("^(-?\\d+)$")) {				//integer/numbr
+						}
+						else if(isInteger(values.get(k))) {							//integer/numbr
 							stack.push(Integer.parseInt(values.get(k)));
-						}else if(values.get(k).contains("WIN")) {
+						}
+						else if(values.get(k).contains("WIN")) {
 							stack.push(1);
-						}else if(values.get(k).contains("FAIL")) {
+						}
+						else if(values.get(k).contains("FAIL")) {
 							stack.push(0);
 						}
 					}
 				}
 			}
 		}
-		Number result = stack.pop();		//the last item on the stack is the result
+		//the last item on the stack is the result
+		Number result = stack.pop();		
 		stack.clear();		
 		
 		//update values of identifier
@@ -959,11 +993,11 @@ public class MainStage {
 			}
 		}
 		
+		//if NOT keyword (NOT <op>)
 		if(l.get(0).equals("NOT")){
-			//if one liner NOT
-			System.out.println(l.toString());
 			//line should only have 2 lexemes NOT <op>
 			if(l.size()>2) return false;
+			
 			if(c.get(1).contains("Literal") || c.get(1).contains("Identifier")) {
 				//check if operand is of type TROOF
 				if(classificationLine.get(1).contains("Identifier")) {
@@ -1117,9 +1151,8 @@ public class MainStage {
 		Collections.reverse(line_class);
 		
 		
-		
+		//check every lexeme if valid for boolean op
 		for(int j=0;j<line.size();j++) {
-			System.out.println("stack:"+stack.toString());
 			//if WIN[true]
 			if(line.get(j).equals("WIN")) {
 				stack.push(true);
@@ -1165,7 +1198,8 @@ public class MainStage {
 					stack.push(false);
 				}
 			}
-			else if(identifiers.contains(line.get(j))) {				//if varident
+			//if varident, get the value
+			else if(identifiers.contains(line.get(j))) {				
 				for(int k=0;k<identifiers.size();k++) {
 					if(identifiers.get(k).equals(line.get(j))) {
 						if(values.get(k).equals("FAIL")) {
@@ -1207,8 +1241,10 @@ public class MainStage {
 				c.add("Literal");
 				c.add("Literal");
 				
-				System.out.println("line:"+l.toString());
+				//evaluate comparison op
 				String value = evaluateComparison(l,c);
+				
+				//check returned value
 				if(value.equals("WIN")) stack.push(true);
 				else stack.push(false);
 			}
@@ -1218,7 +1254,6 @@ public class MainStage {
 		String result = "";
 		if(stack.peek() == false) result = "FAIL";
 		else result = "WIN";
-		System.out.println("result = " + result);
 		
 		//update IT
 		for(int i=0;i<identifiers.size();i++) {
@@ -1273,6 +1308,7 @@ public class MainStage {
 			}
 		}
 		
+		//check lexeme if valid for comparison op
 		for(int i=0;i<c.size();i++) {
 			System.out.println("lexeme:"+l.get(i));
 			
@@ -1359,10 +1395,10 @@ public class MainStage {
 				stack.push(line.get(j));
 				datatype.push("string");
 			}
-			else if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {											//float/numbar
+			else if(isFloat(line.get(j))) {																//float/numbar
 				stack.push(line.get(j));
 				datatype.push("float");
-			}else if(line.get(j).matches("^(-?\\d+)$")) {												//integer/numbr
+			}else if(isInteger(line.get(j))) {															//integer/numbr
 				stack.push(line.get(j));
 				datatype.push("integer");
 			}
@@ -1377,10 +1413,10 @@ public class MainStage {
 							datatype.push("string");
 						}else {
 							//cases for values of varident
-							if(values.get(k).matches("^(-?\\d*\\.\\d+)$")) {							//float/numbar
+							if(isFloat(values.get(k))) {												//float/numbar
 								stack.push(values.get(identifiers.indexOf(line.get(j))));
 								datatype.push("float");
-							}else if(values.get(k).matches("^(-?\\d+)$")) {								//integer/numbr
+							}else if(isInteger(values.get(k))) {										//integer/numbr
 								stack.push(values.get(identifiers.indexOf(line.get(j))));
 								datatype.push("integer");
 							}else if(values.get(k).equals("WIN")) {										//WIN
