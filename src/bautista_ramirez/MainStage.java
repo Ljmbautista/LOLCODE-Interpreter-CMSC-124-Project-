@@ -154,7 +154,7 @@ public class MainStage {
 	
 	public String lexemeChecker(String s) {
 		boolean containsComma = false;
-//		System.out.println("checking s:"+s);
+		
 		//check if there is comma on the current string
 		if(s.matches("^([a-zA-Z]+,)$")) {						
 			containsComma = true;
@@ -428,64 +428,58 @@ public class MainStage {
 	}
 	public void hasKTHXBYE(){																//function for checking if has closing code delimiter
 		//the code must be delimited by KTHXBYE
-		
 		if(lexemes.get(lexemes.size()-1).matches("KTHXBYE") == false) {
 			hasSyntaxError = true;
-			System.out.println("pasok");
 		}
 			
 	}	
-	private void addLiteralSymbol(String identifier, String value) {						
+	private void addLiteralSymbol(String identifier, String value) {						//function for adding symbols				
 		identifiers.add(identifier);
 		values.add(value);
 	}
-	private boolean isComment(String str) {													//checker if comment
+	private boolean isComment(String str) {													//function checker if comment
 		//check if string is a comment
-		if(str.matches("^(OBTW)$")) hasMultiLineComment = true;								//flag for multi-line comment
+		if(str.matches("^(OBTW)$")) hasMultiLineComment = true;								
 		if(str.matches("^(BTW)$") || str.matches("^(OBTW)$") || str.matches("^(TLDR)$")){
 			return true;
-		}else return false;
+		}
+		//else not a comment
+		else return false;
 	}	
 	private void setLexemeTable() {															//function for adding elements to Lexeme TableView
 		//printing of lexemes lexemeTable
 		ObservableList<Lexeme> lexTable = FXCollections.observableArrayList();
-		//System.out.println("\n============LEXEMES============ n:" + lexemes.size());
 		for(int i=0;i<lexemes.size();i++) {
 			lexTable.add(new Lexeme(lexemes.get(i), classification.get(i)));
-			//System.out.println(lexemes.get(i) + " :: " + classification.get(i));
 		}
 		lexemeTable.setItems(lexTable);		//add to tableview content	
-//		System.out.println("lexeme count: "+lexemes.size());
-//		
-//		System.out.println("lexemebyline: "+lexemesByLine.size());
-//		for (ArrayList<String> arr : lexemesByLine) {
-//			System.out.println(arr.toString());
-//		}
-//		for (ArrayList<String> arr : classificationByLine) {
-//			System.out.println(arr.toString());
-//		}
 	}	
+	
 	private void setSourceCode(String program) {											//function for adding elements to source code text area
 		code.setText(program);
 	}	
+	
 	private void setTerminal(String out) {													//function for adding elements to execute text area
 		output.setText(out);
 		System.out.println(out);
 	}	
-	private boolean isOneWord(String str) {
+	
+	private boolean isOneWord(String str) {													//function checker for one-word token
 		if(!str.contains(" ")) return true;
 		else return false;
 	}	
-	private String removeTabs(String str) {
-		if(str.contains("\\x{09}") || str.contains("\t")) {									//remove tabs from the program
+	private String removeTabs(String str) {													//function for removing tabs from the source code
+		if(str.contains("\\x{09}") || str.contains("\t")) {									
 			str = str.replaceAll("[\\x{09}\t]+", "");
 		}
 		return str;
 	}	
-	private boolean isStringEmpty(String s) {												//checker if string = ""
+	
+	private boolean isStringEmpty(String s) {												//function checker if string = ""
 		if(s.matches("")== true) return true;
 		else return false;
 	}	
+	
 	private void clearExecuteBtn() {														//function for clearing execute button
 		//clear for next click
 		identifiers.clear();
@@ -494,7 +488,8 @@ public class MainStage {
 			symbolTable.getItems().clear(); 
 	    } 
 	}	
-	private void clearFileBtn() {
+	
+	private void clearFileBtn() {															//function for clearing file button
 		//clear incase of next click
 		lexemes.clear();
 		classification.clear();
@@ -512,22 +507,26 @@ public class MainStage {
 			symbolTable.getItems().clear(); 
 	    }
 	}
-	private void setSymbolTable() {
+	private void setSymbolTable() {															//function for setting symbol table (GUI)
 		System.out.println("\n=======SYMBOL TABLE======");
 		if(identifiers.size()!=0) {
-			for(int i=0;i<identifiers.size();i++) {
-				System.out.println(identifiers.get(i) + " = "+ values.get(i));
-			}
+			//updating symbol table
 			ObservableList<Identifier> symTable = FXCollections.observableArrayList();
 			for(int i=0;i<identifiers.size();i++) {
 				symTable.add(new Identifier(identifiers.get(i), values.get(i).toString()));
 			}
-//			symTable = symTable.sorted();													// SORTING ONLY WORKS SOMETIMES??????????
-			symbolTable.setItems(symTable);													//add to tableview content	
+			symbolTable.setItems(symTable);	//add to tableview content	
+			
+			
+			//printing
+			for(int i=0;i<identifiers.size();i++) {
+				System.out.println(identifiers.get(i) + " = "+ values.get(i));
+			}
 			System.out.println("identifier count: "+identifiers.size());
 		}
 	}
 	
+	//function for arithmetic syntax checking
 	private boolean ArithmeticSyntaxChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
 		Stack<String> stack = new Stack<String>();
 		int exprCount = 0, opCount = 0, ANCount = 0;
@@ -535,7 +534,6 @@ public class MainStage {
 		
 		ArrayList<String> l = (ArrayList<String>) lexemeLine.clone();
 		ArrayList<String> c = (ArrayList<String>) classificationLine.clone();
-		
 		
 		//remove string delimiter from the arraylists
 		for(int i=0;i<l.size();i++) {
@@ -603,6 +601,7 @@ public class MainStage {
 		else return false;
 	}
 	
+	//function for semantics of arithmetic
 	private String evaluateArithmetic(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
 		Stack<Number> stack = new Stack<Number>();
 		
@@ -697,9 +696,7 @@ public class MainStage {
 				}
 			}
 		}
-		Number result = stack.pop();														//the last item on the stack is the result
-//		System.out.print(lexemeLine.toString() + " ");
-//		System.out.println("result = "+result);
+		Number result = stack.pop();		//the last item on the stack is the result
 		stack.clear();		
 		
 		//update values of identifier
@@ -710,20 +707,15 @@ public class MainStage {
 				break;
 			}
 		}
-		
-//		System.out.println("symbolTable: "+identifiers.size());
-//		for(int k=0;k<identifiers.size();k++) {
-//			System.out.println(identifiers.get(k) + " = "+ values.get(k));
-//		}
 		return result.toString();
 	}
 	
+	//function for var dec/init
 	private void varDecInit(int i, ArrayList<String> lexeme, ArrayList<String> classification) {
 		System.out.println("CLASS: "+classification);
 		if (classification.size() == 2) {
 			if (classification.get(1).equals("Variable Identifier")) {
 				addLiteralSymbol(lexeme.get(1).toString(),"NOOB");
-				System.out.println("HAYOP");
 			}
 		}
 
@@ -743,7 +735,6 @@ public class MainStage {
 			if (classification.get(1).equals("Variable Identifier")) {
 				if (classification.get(4).equals("String Literal")) 
 					addLiteralSymbol(lexeme.get(1).toString(),lexeme.get(4).toString());
-				System.out.println("POOK");
 			}
 		}
 		
@@ -783,7 +774,6 @@ public class MainStage {
 				//set value of varident
 				for(int j=0;j<identifiers.size();j++) {
 					if(identifiers.get(j).equals(lexeme.get(1))) {
-						System.out.println("GO HERE????");
 						values.set(j, value);
 						break;
 					}
@@ -793,7 +783,7 @@ public class MainStage {
 		
 	}
 	
-	private String specialCharacterChecker(String s) {												//function for special characters in string/yarn
+	private String specialCharacterChecker(String s) {														//function for special characters in string/yarn
 		//:) - newline
 		if(s.contains(":)")) {
 			s = s.replaceAll("\\:\\)", "\n");
@@ -820,13 +810,10 @@ public class MainStage {
 	
 	private String printVisible(ArrayList<String> line, ArrayList<String> line_class) {							//function for printing to terminal
 		String output = "";
-		System.out.println("line: "+line.toString());
 		boolean shouldSkip = false;
 		int index = 0;		//index of last part of operation
 		
 		for(int i=0;i<line.size();i++) {
-//			System.out.println("\ni="+i);
-//			if(shouldSkip)System.out.println("skipping "+ line.get(i));
 			
 			//check if should skip
 			if(i==(index+1)) shouldSkip = false;
@@ -923,8 +910,7 @@ public class MainStage {
 					temp.add(line.get(j));
 					temp_class.add(line_class.get(j));
 				}
-				
-				System.out.println(temp.toString());
+				//evaluate arithop
 				output += evaluateArithmetic(temp,temp_class);
 			}
 		}
@@ -957,6 +943,7 @@ public class MainStage {
 		
 	}
 	
+	//function for boolean syntax checking
 	private boolean BooleanSyntaxChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
 
 		ArrayList<String> l = (ArrayList<String>) lexemeLine.clone();
@@ -1054,6 +1041,7 @@ public class MainStage {
 		}
 		else {
 			//nested boolean op
+			
 			Stack<String> stack = new Stack<String>();
 			int exprCount = 0, opCount = 0, ANCount = 0;
 			boolean hasNewExpression = false;
@@ -1120,8 +1108,6 @@ public class MainStage {
 	}
 	
 	private String evaluateBoolean(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {			//function for boolean operation
-		//1 = WIN
-		//0 = FAIL
 		System.out.print("line: "+ lexemeLine.toString());
 		Stack<Boolean> stack = new Stack<Boolean>();
 		
@@ -1245,7 +1231,7 @@ public class MainStage {
 		return result;
 	}
 	
-	private String checkDataType(String var, String s) {
+	private String checkDataType(String var, String s) {															//function that checks datatype of a varident
 		String result = "Literal";
 		
 		ArrayList<ArrayList<String>> line = (ArrayList<ArrayList<String>>) lexemesByLine.clone();
@@ -1267,6 +1253,7 @@ public class MainStage {
 		return result;
 	}
 	
+	//comparison syntax checker
 	private boolean ComparisonSyntaxChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
 		Stack<String> stack = new Stack<String>();
 		int exprCount = 0, opCount = 0, ANCount = 0;
@@ -1346,6 +1333,7 @@ public class MainStage {
 		else return false;
 	}
 	
+	//function for semantics of comparison
 	private String evaluateComparison(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
 		String result = "";
 		Stack<String> stack = new Stack<String>();				//will hold the token/literal
@@ -1367,11 +1355,11 @@ public class MainStage {
 				stack.push(line.get(j));
 				datatype.push("boolean");
 			}
-			else if(line_class.get(j).equals("String Literal")) {
+			else if(line_class.get(j).equals("String Literal")) {										//string/yarn
 				stack.push(line.get(j));
 				datatype.push("string");
 			}
-			else if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {										//float/numbar
+			else if(line.get(j).matches("^(-?\\d*\\.\\d+)$")) {											//float/numbar
 				stack.push(line.get(j));
 				datatype.push("float");
 			}else if(line.get(j).matches("^(-?\\d+)$")) {												//integer/numbr
@@ -1384,7 +1372,7 @@ public class MainStage {
 						//check datatype of value
 						String temp = checkDataType(line.get(j),values.get(k));
 						
-						if(temp.equals("String Literal")) {												//string
+						if(temp.equals("String Literal")) {												//string/yarn
 							stack.push(values.get(identifiers.indexOf(line.get(j))));
 							datatype.push("string");
 						}else {
@@ -1435,18 +1423,18 @@ public class MainStage {
 					
 					if(dt1.equals("float") || dt2.equals("float")) {								//check if float
 						String op = evaluateArithmetic(l,c);
-						//System.out.println("l: " + l + "result = " + op);
 						Float temp = Float.parseFloat(op);
+						
 						stack.push(temp.toString());
 						datatype.push("float");
 					}else {																			//if !isFloat, the result must be an integer/numbr
 						String op = evaluateArithmetic(l,c);
-						//System.out.println("l: " + l + "result = " + op);
 						Integer temp = Integer.parseInt(op);
+						
 						stack.push(temp.toString());
 						datatype.push("integer");
 					}
-				}else {
+				}else {	//if not same datatype, FAIL
 					stack.push("FAIL");
 					datatype.push("boolean");
 				}
@@ -1590,8 +1578,6 @@ public class MainStage {
 				stack.push(evaluateBoolean(l,c));
 				datatype.push("boolean");
 			}
-//			System.out.println("stack: " + stack.toString());
-//			System.out.println("datatype: " + datatype.toString());
 		}
 		//the last item on the stack is result
 		result = stack.pop();
@@ -1607,6 +1593,7 @@ public class MainStage {
 		return result;
 	}
 	
+	//function for variable assignment
 	private void variableAssignment(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
 		String value = "";
 		//System.out.print("line: "+ lexemeLine.toString());
@@ -1614,31 +1601,36 @@ public class MainStage {
 		ArrayList<String> l = new ArrayList<String>();
 		ArrayList<String> c = new ArrayList<String>();
 		
+		//remove the unecessary tokens
 		for(String e : lexemeLine.subList(1, lexemeLine.size())) l.add(e);
 		for(String e : classificationLine.subList(1, lexemeLine.size())) c.add(e);
 		
+		//if line has boolean
 		if(classificationLine.contains("Boolean Operation Keyword")) {
 			value = evaluateBoolean(l,c);
 		}
+		//if line has comparison
 		else if(classificationLine.contains("Comparison Operation Keyword")) {
 			value = evaluateComparison(l,c);
 		}
+		//if line has arith
 		else if(classificationLine.contains("Arithmetic Operation Keyword")) {
 			value = evaluateArithmetic(l,c);
 		}
+		//if string literal
 		else if(classificationLine.contains("String Literal")) {
 			value = lexemeLine.get(classificationLine.indexOf("String Literal"));
 		}
+		//if other literal
 		else if(classificationLine.contains("Literal")) {
 			//look for index of literal
 			value = lexemeLine.get(classificationLine.indexOf("Literal"));
 		}
-		//if visible varident
+		//if varident
 		else if (classificationLine.get(2).equals("Variable Identifier") || classificationLine.get(2).equals("Implicit Variable")) {
 			//get the value of the varident
 			value = values.get(identifiers.indexOf(lexemeLine.get(2)));
 		}
-		//System.out.println("value = "+ value);
 		
 		//set value of varident
 		for(int i=0;i<identifiers.size();i++) {
@@ -1668,15 +1660,16 @@ public class MainStage {
 		return true;
 	}	
 	
-	private void printError(int line_number) {
+	private void printError(int line_number) {																				//function for printing line number error
 		String out = "";
 		out = "$lci "+ file.getName()+"\n";
 		out += "[ ! ] Error in line "+line_number;
 		
 		hasSyntaxError = true;																		
-		setTerminal(out);																			//print error to interface
+		setTerminal(out);	//print error to interface
 	}
 	
+	//function for if-else semantics
 	private ArrayList<Integer> evaluateIfElse(String IT, int i, ArrayList<ArrayList<String>> lexeme, ArrayList<ArrayList<String>> classification){
 		ArrayList<Integer> skip = new ArrayList<>();
 		int h, current=0, buffer = 0;
@@ -1719,6 +1712,7 @@ public class MainStage {
 		return skip;
 	}
 	
+	//function for switch case semantics
 	private ArrayList<Integer> evaluateSwitch(String IT, int i, ArrayList<ArrayList<String>> lexeme, ArrayList<ArrayList<String>> classification) {
 		System.out.println("I GOT IN.");
 		ArrayList<Integer> skip = new ArrayList<>();
@@ -1772,6 +1766,7 @@ public class MainStage {
 		return result;
 	}
 	
+	//syntax checker of concat
 	private boolean ConcatSyntaxChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
 		int opCount = 0, ANCount = 0;
 		
@@ -1828,7 +1823,7 @@ public class MainStage {
 		return true;
 	}
 	
-	private void instantiateIT() {
+	private void instantiateIT() {																	//function that instantiates IT 
 		//instantiate IT implicit variable											
 		identifiers.add("IT");
 		values.add("NOOB");
@@ -1852,8 +1847,8 @@ public class MainStage {
 			}
 			ArrayList<String> line = lexemesByLine.get(i);
 			ArrayList<String> line_class = classificationByLine.get(i);
-			//cases for every line
 			
+			//******cases for every line*******//
 			//if line has var dec/init
 			if (line_class.contains("Variable Declaration")) {
 				varDecInit(i, line, line_class);
@@ -1861,19 +1856,19 @@ public class MainStage {
 			
 			//if line has var assignment
 			else if(line_class.contains("Assignment Keyword")) {												
-				if(variableAssignmentSyntaxChecker(line, line_class)) {									//check if valid syntax
-					variableAssignment(line, line_class);												//perform variable assignment
+				if(variableAssignmentSyntaxChecker(line, line_class)) {			//check if valid syntax
+					variableAssignment(line, line_class);						//perform variable assignment
 				}else {
-					printError(line_numByLine.get(i));													//if error found, print line number error then break
+					printError(line_numByLine.get(i));							//if error found, print line number error then break
 					break;
 				}
 			}
 			//if line has gimmeh
 			else if(line_class.contains("Input Keyword")) {
-				if(GimmehChecker(line, line_class)) {													//check if valid syntax
-					getGimmeh(line, line_class);														//perform gimmeh
+				if(GimmehChecker(line, line_class)) {					//check if valid syntax
+					getGimmeh(line, line_class);						//perform gimmeh
 				}else {
-					printError(line_numByLine.get(i));													//if error found, print line number error then break
+					printError(line_numByLine.get(i));					//if error found, print line number error then break
 					break;
 				}
 			}
@@ -1886,32 +1881,28 @@ public class MainStage {
 				if(ComparisonSyntaxChecker(line,line_class)) {
 					IT = evaluateComparison(line,line_class);
 				}else {
-					printError(line_numByLine.get(i));													//if error found, print line number error then break
+					printError(line_numByLine.get(i));							//if error found, print line number error then break
 					break;
 				}
-				//System.out.println("IT = " + IT);
 			}
 			//if line has boolean
 			else if(line_class.contains("Boolean Operation Keyword")) {
 				if(BooleanSyntaxChecker(line,line_class)) {
 						IT = evaluateBoolean(line,line_class);
 				}else {
-					printError(line_numByLine.get(i));													//if error found, print line number error then break
+					printError(line_numByLine.get(i));							//if error found, print line number error then break
 					break;
 				}
-				
-				//System.out.println("IT = " + IT);
 			}
 			//if line has arithmetic
 			else if(line_class.contains("Arithmetic Operation Keyword")) {
 				//IT = evaluateArithmetic(line,line_class);
-				if(ArithmeticSyntaxChecker(line,line_class)) {											//check if valid syntax
+				if(ArithmeticSyntaxChecker(line,line_class)) {					//check if valid syntax
 					IT = evaluateArithmetic(line,line_class);
 				}else {
-					printError(line_numByLine.get(i));													//if error found, print line number error then break
+					printError(line_numByLine.get(i));							//if error found, print line number error then break
 					break;
 				}
-				//System.out.println("IT = " + IT);
 			}
 			//if line has if-else
 			else if(line_class.contains("O RLY Keyword")) {
@@ -1928,7 +1919,7 @@ public class MainStage {
 				if(ConcatSyntaxChecker(line,line_class)) {
 					IT = evaluateConcat(line,line_class);
 				}else {
-					printError(line_numByLine.get(i));													//if error found, print line number error then break
+					printError(line_numByLine.get(i));							//if error found, print line number error then break
 					break;
 				}
 			}
@@ -1963,7 +1954,6 @@ public class MainStage {
 							
 							lexemeLine.clear();														//clear lexemeByLine
 							classificationLine.clear();
-//							System.out.println("reading line("+line_number+"):"+str);
 							
 							//checker if comments encountered to SKIP reading the line
 							if(removeTabs(str).matches("\s*TLDR")) hasMultiLineComment = false;		//if TLDR, end of multiline comment
@@ -1975,14 +1965,12 @@ public class MainStage {
 							//else, string can be split to words
 							else {
 								String[] words = str.split("\t| ");									//split each word by space delimiter  //TOKENIZE
-//								System.out.println("words:"+Arrays.toString(words));
 								String s = new String();
 								
 								if(words.length != 0 && isComment(words[0])) continue;				//ignore comments
 								if(words.length != 0) s = words[0];									//assign the first word to string s
 								
 								for(int i=1;i<(words.length);i++) {									//start from the 2nd word
-									//System.out.println("checking word:" + words[i]);
 									if(s.matches("^(TLDR)$")) {										//end of multiline comment
 										hasMultiLineComment = false;
 										continue;
@@ -2003,10 +1991,8 @@ public class MainStage {
 									if(i == (words.length-1)) {										//check if last lexeme
 										s = lexemeChecker(s);										//tokenize last laxeme			
 										if(!isStringEmpty(s)) hasSyntaxError = true;				//if there is an unclassified token left on string
-									}
-//									System.out.println("current s:"+s);		
+									}	
 								}
-//								System.out.println();
 							}
 							
 							if(!isStringEmpty(str)) hasHAI();										//checker if source code has HAI as code delimiter
