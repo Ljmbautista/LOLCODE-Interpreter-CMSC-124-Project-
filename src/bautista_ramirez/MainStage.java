@@ -152,7 +152,7 @@ public class MainStage {
 		classificationLine.add(c);
 	}
 	
-	public String lexemeChecker(String s) {
+	public String lexemeChecker(String s, int line_num) {
 		boolean containsComma = false;
 		
 		//check if there is comma on the current string
@@ -417,22 +417,33 @@ public class MainStage {
 		}	
 		//if the string has a comma
 		if(containsComma) {
-			lexemeChecker(",");
+			lexemeChecker(",",line_num);
 		}
 		return s;
 	}	
 	
-	public void hasHAI() {																	//function for checking if has opening code delimiter
+	public boolean hasHAI(int line_num) {														//function for checking if has opening code delimiter
 		//the code must be start with HAI
-		if(lexemes.size() != 0 && lexemes.get(0).matches("HAI") == false) 
+		if(lexemes.size() != 0 && lexemes.get(0).matches("HAI") == false) {
 			hasSyntaxError = true;
+			displayError(line_num,"Delimiter HAI not found");
+			return false;
+		}
+		
+		//has delimiter
+		return true;
 	}
 	
-	public void hasKTHXBYE(){																//function for checking if has closing code delimiter
+	public boolean hasKTHXBYE(int line_num){													//function for checking if has closing code delimiter
 		//the code must be delimited by KTHXBYE
 		if(lexemes.get(lexemes.size()-1).matches("KTHXBYE") == false) {
 			hasSyntaxError = true;
+			displayError(line_num,"Delimiter KTHXBYE not found");
+			return false;
 		}
+		
+		//has delimiter
+		return true;
 	}	
 	
 	private void addLiteralSymbol(String identifier, String value) {						//function for adding symbols				
@@ -532,7 +543,7 @@ public class MainStage {
 	}
 	
 	//function for arithmetic syntax checking using STACK
-	private boolean ArithmeticSyntaxChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
+	private boolean ArithmeticSyntaxChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine, int line_num) {
 		Stack<String> stack = new Stack<String>();
 		int exprCount = 0, opCount = 0, ANCount = 0;
 		boolean hasNewExpression = false;					//flag if new expression found
@@ -550,10 +561,19 @@ public class MainStage {
 			}
 		}
 		
+		//if only arith operator found
+		if(l.size()==1){
+			displayError(line_num,"Missing operand");
+			return false;
+		}
+		
 		//check every lexeme if they are valid lexeme for arithmetic op
 		for(int i=0;i<c.size();i++) {
 			//if new expression found on same line
-			if(hasNewExpression) return false; 
+			if(hasNewExpression) {
+				displayError(line_num,"Invalid syntax for nesting of arithmetic operation");
+				return false; 
+			}
 			
 			//if lexeme is ARITH OP Keyword
 			if(c.get(i).equals("Arithmetic Operation Keyword")) {
@@ -572,12 +592,21 @@ public class MainStage {
 				opCount++;
 			}
 			//if lexeme is not classified, syntax error
-			else return false;
+			else {
+				displayError(line_num,"Invalid character found for Arithmetic Operation");
+				return false;
+			}
 			
 			//if there is more than one AN, syntax error
-			if(ANCount >= 2) return false;
-			//if there is more than two operand, syntax error
-			if(opCount > 2) return false;
+			if(ANCount >= 2) {
+				displayError(line_num,"Unexpected AN keyword found");
+				return false;
+			}
+			//if there is more  two consecutive operand, syntax error
+			if(opCount >= 2 && ANCount == 0) {
+				displayError(line_num,"Unexpected operand found");
+				return false;
+			}
 			
 			//if operands are two varident/literal or atleast one expr and atleast 1 operand and 1 AN (nested op)
 			if((opCount == 2 && ANCount == 1) || (exprCount >= 1 && opCount >= 1 && ANCount == 1)) {
@@ -599,14 +628,20 @@ public class MainStage {
 					ANCount--;
 				}
 				//if stack is empty, syntax error
-				else return false;
+				else {
+					displayError(line_num,"Invalid syntax for arithmetic operation");
+					return false;
+				}
 			}
 			System.out.println("expr:"+exprCount+"\nopcount:"+opCount+"\nancount:"+ANCount+"\n");
 		}	
 		
 		//the conditions must be true to perform arithmetic operation
 		if(stack.isEmpty() && opCount == 0 && ANCount == 0 && exprCount == 0) return true;
-		else return false;
+		else {
+			displayError(line_num,"Missing operand");
+			return false;
+		}
 	}
 	
 	private boolean isFloat(String s) {													//function for checking if float
@@ -1687,10 +1722,16 @@ public class MainStage {
 		return true;
 	}
 	
-	private boolean GimmehChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {			//checker for invalid IO syntax
+	private boolean GimmehChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine, int line_num) {			//checker for invalid IO syntax
 
-		if(lexemeLine.size() == 1 || lexemeLine.size()>2) return false;											//the gimmeh statement should only be gimmeh varident
-		if(!identifiers.contains(lexemeLine.get(1))) return false;												//if variable not declared/IT
+		if(lexemeLine.size() == 1 || lexemeLine.size()>2) { //the gimmeh statement should only be GIMMEH <varident>
+			displayError(line_num,"Unexpected character found");
+			return false;				
+		}
+		if(!identifiers.contains(lexemeLine.get(1))) {		//if variable not declared/IT
+			displayError(line_num,"Undeclared varident found");
+			return false;												
+		}
 		
 		//else no syntax error
 		return true;
@@ -1700,6 +1741,15 @@ public class MainStage {
 		String out = "";
 		out = "$lci "+ file.getName()+"\n";
 		out += "[ ! ] Error in line "+line_number;
+		
+		hasSyntaxError = true;																		
+		setTerminal(out);	//print error to interface
+	}
+	
+	private void displayError(int line_number, String err) {
+		String out = "";
+		out = "$lci "+ file.getName()+"\n";
+		out += "[ ! ] Error in line "+line_number+": "+ err;
 		
 		hasSyntaxError = true;																		
 		setTerminal(out);	//print error to interface
@@ -1901,12 +1951,10 @@ public class MainStage {
 			}
 			//if line has gimmeh
 			else if(line_class.contains("Input Keyword")) {
-				if(GimmehChecker(line, line_class)) {					//check if valid syntax
-					getGimmeh(line, line_class);						//perform gimmeh
-				}else {
-					printError(line_numByLine.get(i));					//if error found, print line number error then break
-					break;
-				}
+				if(GimmehChecker(line, line_class,line_numByLine.get(i))) {					//check if valid syntax
+					getGimmeh(line, line_class);						
+				}else break;																//if invalid syntax, print error
+					
 			}
 			//if line has visible
 			else if(line_class.contains("Output Keyword")) {
@@ -1932,13 +1980,9 @@ public class MainStage {
 			}
 			//if line has arithmetic
 			else if(line_class.contains("Arithmetic Operation Keyword")) {
-				//IT = evaluateArithmetic(line,line_class);
-				if(ArithmeticSyntaxChecker(line,line_class)) {					//check if valid syntax
+				if(ArithmeticSyntaxChecker(line,line_class,line_numByLine.get(i))) {			//check if valid syntax
 					IT = evaluateArithmetic(line,line_class);
-				}else {
-					printError(line_numByLine.get(i));							//if error found, print line number error then break
-					break;
-				}
+				}else break;																	//if invalid syntax, print error
 			}
 			//if line has if-else
 			else if(line_class.contains("O RLY Keyword")) {
@@ -1997,7 +2041,7 @@ public class MainStage {
 							
 							
 							//if string can't be split (one word-line)
-							if(isOneWord(removeTabs(str))) lexemeChecker(removeTabs(str));			
+							if(isOneWord(removeTabs(str))) lexemeChecker(removeTabs(str),line_number);			
 							//else, string can be split to words
 							else {
 								String[] words = str.split("\t| ");									//split each word by space delimiter  //TOKENIZE
@@ -2016,26 +2060,32 @@ public class MainStage {
 									if(hasMultiLineComment) continue;								
 									if(isComment(s)) break;		
 									
-									try{ s = lexemeChecker(s); }									//check token if lexeme
+									try{ s = lexemeChecker(s,line_number); }						//check token if lexeme
 									catch(Exception e1) {											//if error occur during pattern checking, syntax error
 										hasSyntaxError = true;
+										displayError(line_number,"Unclassified token found");
 									}
 									if(words.length != 1) {											//add next word to the string to compare
 										if(isStringEmpty(s)) s = words[i];							//set new s
 										else s = s + " " + words[i];								//append the next word to current s
 									}
 									if(i == (words.length-1)) {										//check if last lexeme
-										s = lexemeChecker(s);										//tokenize last laxeme			
-										if(!isStringEmpty(s)) hasSyntaxError = true;				//if there is an unclassified token left on string
+										s = lexemeChecker(s,line_number);							//tokenize last laxeme			
+										if(!isStringEmpty(s)) {
+											hasSyntaxError = true;									//if there is an unclassified token left on string
+											displayError(line_number,"Unclassified token found");
+										}
 									}	
 								}
 							}
 							
-							if(!isStringEmpty(str)) hasHAI();										//checker if source code has HAI as code delimiter
+							if(!isStringEmpty(str)) {
+								if(!hasHAI(line_number)) break;										//checker if source code has HAI as code delimiter
+							}
 							
 							//if there is a syntax error, print error prompt
 							if(hasSyntaxError) {												
-								printError(line_number);											//print error to interface
+								//printError(line_number);											//print error to interface
 								break;																//terminate reading file if there's an error
 							}
 							//update lexemesByLine
@@ -2045,12 +2095,12 @@ public class MainStage {
 								classificationByLine.add((ArrayList<String>) classificationLine.clone());
 							}
 						}
-						hasKTHXBYE(); 																//file must be delimited by a closing KTHXBYE
 						
-						if(!hasSyntaxError) {														//if no error, update interface
+						if(!hasSyntaxError && hasKTHXBYE(line_number)) {							//if no error, update interface
 							setSourceCode(program);
 							setLexemeTable();
-						}else printError(line_number);												//if with error, print error	
+						}
+						//else printError(line_number);												//if with error, print error	
 					}else System.out.println("[!] No file selected.");								//print error if no file is selected
 				} catch (IOException e1) {
 					e1.printStackTrace();
