@@ -5,6 +5,7 @@ HAI
   var R  
 
   BTW undeclared varident
+  I HAS A var2
   var2 R "hello"
 
 KTHXBYE

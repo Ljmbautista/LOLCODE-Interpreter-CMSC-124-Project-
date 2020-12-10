@@ -780,7 +780,7 @@ public class MainStage {
 	}
 	
 	//function for var dec/init
-	private void varDecInit(int i, ArrayList<String> lexeme, ArrayList<String> classification) {
+	private void varDecInit(int i, ArrayList<String> lexeme, ArrayList<String> classification, int line_num) {
 		System.out.println("CLASS: "+classification);
 		if (classification.size() == 2) {
 			if (classification.get(1).equals("Variable Identifier")) {
@@ -810,25 +810,34 @@ public class MainStage {
 		else {
 			if (classification.get(1).equals("Variable Identifier")) {
 				String value = "";
-				//System.out.print("line: "+ lexemeLine.toString());
+				
 				//cases for variable assignment
 				ArrayList<String> l = new ArrayList<String>();
 				ArrayList<String> c = new ArrayList<String>();
 				
-				for(String e : lexeme.subList(1, lexeme.size())) l.add(e);
-				for(String e : classification.subList(1, lexeme.size())) c.add(e);
+				for(String e : lexeme.subList(3, lexeme.size())) l.add(e);
+				for(String e : classification.subList(3, lexeme.size())) c.add(e);
+				System.out.println("line: "+ l.toString());
 				
 				if(classification.contains("Boolean Operation Keyword")) {
-					value = evaluateBoolean(l,c);
+					if(BooleanSyntaxChecker(l,c,line_num)) {
+						value = evaluateBoolean(l,c);
+					}
 				}
 				else if(classification.contains("Comparison Operation Keyword")) {
-					value = evaluateComparison(l,c);
+					if(ComparisonSyntaxChecker(l,c,line_num)) {
+						value = evaluateComparison(l,c);
+					}
 				}
 				else if(classification.contains("Arithmetic Operation Keyword")) {
-					value = evaluateArithmetic(l,c);
+					if(ArithmeticSyntaxChecker(l,c,line_num)) {
+						value = evaluateArithmetic(l,c);
+					}
 				}
-				else if(lexemeLine.contains("SMOOSH")) {
-					value = evaluateConcat(l,c);
+				else if(lexeme.contains("SMOOSH")) {
+					if(ConcatSyntaxChecker(l,c,line_num)) {
+						value = evaluateConcat(l,c);
+					}
 				}
 				else if(classification.contains("String Literal")) {
 					value = lexeme.get(classification.indexOf("String Literal"));
@@ -1753,7 +1762,7 @@ public class MainStage {
 	}
 	
 	//function for variable assignment
-	private void variableAssignment(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
+	private void variableAssignment(ArrayList<String> lexemeLine, ArrayList<String> classificationLine, int line_num) {
 		String value = "";
 		//System.out.print("line: "+ lexemeLine.toString());
 		//cases for variable assignment
@@ -1761,24 +1770,32 @@ public class MainStage {
 		ArrayList<String> c = new ArrayList<String>();
 		
 		//remove the unecessary tokens
-		for(String e : lexemeLine.subList(1, lexemeLine.size())) l.add(e);
-		for(String e : classificationLine.subList(1, lexemeLine.size())) c.add(e);
+		for(String e : lexemeLine.subList(2, lexemeLine.size())) l.add(e);
+		for(String e : classificationLine.subList(2, lexemeLine.size())) c.add(e);
 		
 		//if line has boolean
 		if(classificationLine.contains("Boolean Operation Keyword")) {
-			value = evaluateBoolean(l,c);
+			if(BooleanSyntaxChecker(l,c,line_num)) {
+				value = evaluateBoolean(l,c);
+			}
 		}
 		//if line has comparison
 		else if(classificationLine.contains("Comparison Operation Keyword")) {
-			value = evaluateComparison(l,c);
+			if(ComparisonSyntaxChecker(l,c,line_num)) {
+				value = evaluateComparison(l,c);
+			}
 		}
 		//if line has arith
 		else if(classificationLine.contains("Arithmetic Operation Keyword")) {
-			value = evaluateArithmetic(l,c);
+			if(ArithmeticSyntaxChecker(l,c,line_num)) {
+				value = evaluateArithmetic(l,c);
+			}
 		}
 		//if line has smoosh
 		else if(lexemeLine.contains("SMOOSH")) {
-			value = evaluateConcat(l,c);
+			if(ConcatSyntaxChecker(l,c,line_num)) {
+				value = evaluateConcat(l,c);
+			}
 		}
 		//if string literal
 		else if(classificationLine.contains("String Literal")) {
@@ -2146,17 +2163,13 @@ public class MainStage {
 			//if line has var dec/init
 			if (line_class.contains("Variable Declaration")) {
 				if (varDecChecker(line, line_class)) {					
-					varDecInit(i, line, line_class);
-				} else {
-					System.out.println("TAKE A BREAK");
-					printError(line_numByLine.get(i));
-					break;
-				}
+					varDecInit(i, line, line_class,line_numByLine.get(i));
+				} else break;
 			}			
 			//if line has var assignment
 			else if(line_class.contains("Assignment Keyword")) {												
 				if(variableAssignmentSyntaxChecker(line, line_class,line_numByLine.get(i))) {	//check if valid syntax
-					variableAssignment(line, line_class);						
+					variableAssignment(line, line_class,line_numByLine.get(i));						
 				}else break;																	//if invalid syntax, print error
 			}
 			//if line has gimmeh

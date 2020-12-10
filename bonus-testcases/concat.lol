@@ -20,6 +20,8 @@ HAI
 	VISIBLE IT
 	
 	BTW variable assignment of smoosh
+	I HAS A str4 ITZ SMOOSH "hi " AN str2
+	VISIBLE str4
 	str1 R SMOOSH "hello " AN "mars " AN "ganda "
 	VISIBLE str1
 KTHXBYE
