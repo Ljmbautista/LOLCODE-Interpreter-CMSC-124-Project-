@@ -1854,41 +1854,58 @@ public class MainStage {
 	//function for if-else semantics
 	private ArrayList<Integer> evaluateIfElse(String IT, int i, ArrayList<ArrayList<String>> lexeme, ArrayList<ArrayList<String>> classification){
 		ArrayList<Integer> skip = new ArrayList<>();
-		int h, current=0, buffer = 0;
+		int h, current=0, buffer = 0, decrement = 2;
 		if (IT.equals("WIN")) {
 			for (h=i+1; h<classification.size(); h++) {
+				System.out.println("Buffer: "+buffer);
+				System.out.println("Lexeem: "+lexeme.get(h));
 				current = h;
-				System.out.println("YUM: "+classification.get(h)+" h: "+h);
-				if (classification.get(h).contains("O RLY Keyword")) buffer+=1;
+				if (classification.get(h).contains("O RLY Keyword")) buffer+=2;
 				else if (classification.get(h).contains("NO WAI Keyword")) {
 					if (buffer == 0) {
+						System.out.println("BREAKED");
 						break;
 					}
-					else buffer-=1;
+					else {
+						decrement = 1;
+						buffer-=decrement;
+					}
 				}
-				else if (classification.get(h).contains("If-Then Delimiter")) break;
+				else if (classification.get(h).contains("If-Then Delimiter")) {
+					if (buffer == 0) {
+						System.out.println("BREAKED");
+						break;
+					}
+					else buffer-=decrement;
+				}
 			}
-			for (h=current+1; h<classification.size(); h++) {
-				if (classification.get(h).contains("O RLY Keyword")) buffer+=1;
-				else if (classification.get(h).contains("NO WAI Keyword")) {
+			buffer = decrement = 0;
+			for (h=current; h<classification.size(); h++) {
+				if (classification.get(h).contains("O RLY Keyword")) buffer+=2;
+				else if (classification.get(h).contains("If-Then Delimiter")) {
 					if (buffer == 0) break;
-					else buffer-=1;
+					else {
+						decrement = 1;
+						buffer-=decrement;
+					}		
 				}
-				else if (classification.get(h).contains("If-Then Delimiter")) break;
 				skip.add(h);
 			}
 		} else {
-			for (h=i+1; h<classification.size(); h++) {
-				
-				skip.add(h);
-				if (classification.get(h).contains("O RLY Keyword")) buffer+=1;
+			for (h=i+1; h<classification.size(); h++) {				
+				if (classification.get(h).contains("O RLY Keyword")) buffer+=2;
 				else if (classification.get(h).contains("NO WAI Keyword")) {
-					if (buffer == 0) {
-						break;
+					if (buffer == 0) break;
+					else {
+						decrement-=1;
+						buffer-=decrement;
 					}
-					else buffer-=1;
+				} 
+				else if (classification.get(h).contains("If-Then Delimiter")) {
+					if (buffer == 0) break;
+					else buffer-=decrement;
 				}
-				else if (classification.get(h).contains("If-Then Delimiter")) break; 
+				skip.add(h);
 			}
 		}
 		return skip;
@@ -1901,12 +1918,18 @@ public class MainStage {
 		int h, buffer = 0;
 		boolean skipFlag = true, enteredFlag = false;
 		for (h=i+1;h<classification.size();h++) {
-			System.out.println("skipFlag: "+skipFlag);
-			if (classification.get(h).contains("OMG Keyword")) {				
-				System.out.println("Comparing "+lexeme.get(h).get(1)+ " and "+IT);
-				if (lexeme.get(h).get(1).equals(IT)) {
-					skipFlag = false;
-					enteredFlag = true;
+			if (classification.get(h).contains("OMG Keyword")) {
+				if (lexeme.get(h).size() == 2) {					
+					if (lexeme.get(h).get(1).equals(IT)) {
+						skipFlag = false;
+						enteredFlag = true;
+					}
+				}
+				else if (lexeme.get(h).size() == 4) {
+					if (lexeme.get(h).get(2).equals(IT)) {
+						skipFlag = false;
+						enteredFlag = true;
+					}
 				}
 			}
 			else if (classification.get(h).contains("Switch-Case Delimiter")) buffer+=1;
@@ -1948,11 +1971,83 @@ public class MainStage {
 		return result;
 	}
 	
-	//syntax checker of concat
-	private boolean ConcatSyntaxChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine, int line_num) {
-		int opCount = 0, ANCount = 0;
+	private boolean varDecChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine) {
+		System.out.println(identifiers);
+		if (identifiers.contains(lexemeLine.get(1))) return false;
+		return true;
+	}
+	
+	private boolean IfElseSyntaxChecker(int i, ArrayList<ArrayList<String>> lexeme, ArrayList<ArrayList<String>> classification) {
+		boolean unclosed = true;
+		int buffer = 0;
 		
+		for (int j=i+1; j<lexeme.size(); j++) {
+			if (classification.get(j).contains("O RLY Keyword")) {
+				System.out.println("Encountered an O RLY");
+				buffer+=1;
+			}
+			else if (classification.get(j).contains("If-Then Delimiter")) {
+				if (buffer == 0) {
+					unclosed = false;
+					break;
+				}
+				else {
+					System.out.println("Encountered an OIC");
+					buffer-=1;
+				}
+			}
+		}
+		
+		
+		
+		if (unclosed) {
+			displayError(line_numByLine.get(i),"O RLY not closed");
+			return false;
+		}
+		
+		return true;
+	}
+	
+	private boolean SwitchSyntaxChecker(int i, ArrayList<ArrayList<String>> lexeme, ArrayList<ArrayList<String>> classification) {
+		boolean unclosed = true, noLiteral = false;
+		int buffer = 0;
+		
+		for (int j=i+1; j<lexeme.size(); j++) {
+			if (classification.get(j).contains("Switch-Case Delimiter")) {
+				System.out.println("Encountered a WTF");
+				buffer+=1;
+			}
+			else if (classification.get(j).contains("If-Then Delimiter")) {
+				if (classification.get(j).size() == 1) {
+					displayError(line_numByLine.get(j),"No case literal");
+					noLiteral = true;
+				}
+				if (buffer == 0) {
+					unclosed = false;
+					break;
+				}
+				else {
+					System.out.println("Encountered an OIC");
+					buffer-=1;
+				}
+			}
+		}
+		if (noLiteral) {
+			return false;		
+		}
+		if (unclosed) {
+			displayError(line_numByLine.get(i),"WTF? not closed");
+			return false;
+		}
+		
+		return true;
+	}
+	
+	//syntax checker of concat
+	private boolean ConcatSyntaxChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine, int line_num) {		
+		@SuppressWarnings("unchecked")
 		ArrayList<String> l = (ArrayList<String>) lexemeLine.clone();
+		@SuppressWarnings("unchecked")
 		ArrayList<String> c = (ArrayList<String>) classificationLine.clone();
 		
 		
@@ -2032,20 +2127,26 @@ public class MainStage {
 		
 		//check every line statement/s
 		for(int i=0;i<lexemesByLine.size();i++) {
+			//skip line of code if line number is in skipList
 			if (!skipList.isEmpty())
-			if (skipList.contains(i)) {
-				skipList.remove((Object) i);
-				continue;
-			}
+				if (skipList.contains(i)) {
+					skipList.remove((Object) i);
+					continue;
+				}
 			ArrayList<String> line = lexemesByLine.get(i);
 			ArrayList<String> line_class = classificationByLine.get(i);
 			
 			//******cases for every line*******//
 			//if line has var dec/init
 			if (line_class.contains("Variable Declaration")) {
-				varDecInit(i, line, line_class);
-			}
-			
+				if (varDecChecker(line, line_class)) {					
+					varDecInit(i, line, line_class);
+				} else {
+					System.out.println("TAKE A BREAK");
+					printError(line_numByLine.get(i));
+					break;
+				}
+			}			
 			//if line has var assignment
 			else if(line_class.contains("Assignment Keyword")) {												
 				if(variableAssignmentSyntaxChecker(line, line_class,line_numByLine.get(i))) {	//check if valid syntax
@@ -2082,13 +2183,17 @@ public class MainStage {
 			}
 			//if line has if-else
 			else if(line_class.contains("O RLY Keyword")) {
-				newSkips = evaluateIfElse(IT,i,lexemesByLine,classificationByLine);
-				newSkips.forEach(skipList::add);
+				if (IfElseSyntaxChecker(i,lexemesByLine,classificationByLine)) {					
+					newSkips = evaluateIfElse(IT,i,lexemesByLine,classificationByLine);
+					newSkips.forEach(skipList::add);
+				} else break;
 			}
 			//if line has switch case
 			else if(line_class.contains("Switch-Case Delimiter")) {
-				newSkips = evaluateSwitch(values.get(identifiers.indexOf("IT")),i,lexemesByLine,classificationByLine);
-				newSkips.forEach(skipList::add);
+				if (SwitchSyntaxChecker(i,lexemesByLine,classificationByLine)) {
+					newSkips = evaluateSwitch(values.get(identifiers.indexOf("IT")),i,lexemesByLine,classificationByLine);
+					newSkips.forEach(skipList::add);
+				} else break;
 			}
 			//if line has SMOOSH (concat)
 			else if(line_class.contains("Concatenation Operation Keyword")) {
