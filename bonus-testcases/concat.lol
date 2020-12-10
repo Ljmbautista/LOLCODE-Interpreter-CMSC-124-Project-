@@ -18,4 +18,8 @@ HAI
 	VISIBLE IT
 	SMOOSH str2 AN str3
 	VISIBLE IT
+	
+	BTW variable assignment of smoosh
+	str1 R SMOOSH "hello " AN "mars " AN "ganda "
+	VISIBLE str1
 KTHXBYE

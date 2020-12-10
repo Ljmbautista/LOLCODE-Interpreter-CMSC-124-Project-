@@ -827,6 +827,9 @@ public class MainStage {
 				else if(classification.contains("Arithmetic Operation Keyword")) {
 					value = evaluateArithmetic(l,c);
 				}
+				else if(lexemeLine.contains("SMOOSH")) {
+					value = evaluateConcat(l,c);
+				}
 				else if(classification.contains("String Literal")) {
 					value = lexeme.get(classification.indexOf("String Literal"));
 				}
@@ -849,7 +852,6 @@ public class MainStage {
 				}
 			}
 		}
-		
 	}
 	
 	private String specialCharacterChecker(String s) {														//function for special characters in string/yarn
@@ -1773,6 +1775,10 @@ public class MainStage {
 		//if line has arith
 		else if(classificationLine.contains("Arithmetic Operation Keyword")) {
 			value = evaluateArithmetic(l,c);
+		}
+		//if line has smoosh
+		else if(lexemeLine.contains("SMOOSH")) {
+			value = evaluateConcat(l,c);
 		}
 		//if string literal
 		else if(classificationLine.contains("String Literal")) {
