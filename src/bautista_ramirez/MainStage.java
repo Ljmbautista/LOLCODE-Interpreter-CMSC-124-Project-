@@ -2177,12 +2177,12 @@ public class MainStage {
 			}
 			//if line has visible
 			else if(line_class.contains("Output Keyword")) {
-				
-				IT = printVisible(line,line_class);
-				if(IT.contains("NOOB")) {
+				String temp = printVisible(line,line_class);
+				if (temp.contains("NOOB")) {
+					//can't print coz noob
 					displayError(line_numByLine.get(i),"Can't print 'NOOB'");
 					break;
-				}else output += IT;
+				}else output += temp;
 				
 			}
 			//if line has comparison
