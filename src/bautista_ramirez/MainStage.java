@@ -1896,6 +1896,11 @@ public class MainStage {
 						innerCount-=decrement;
 					}
 				}
+				else if (classification.get(h).contains("MEBBE Keyword")) {
+					if (innerCount == 0) {
+						break;
+					}
+				}
 				else if (classification.get(h).contains("If-Then Delimiter")) {
 					if (innerCount == 0) {
 						System.out.println("BREAKED");

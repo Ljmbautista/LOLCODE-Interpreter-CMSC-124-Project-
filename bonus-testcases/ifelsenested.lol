@@ -1,6 +1,6 @@
 BTW for if-else statements
 HAI
-	BOTH SAEM 1 AN 2
+	BOTH SAEM 1 AN 1
 	O RLY?
 		YA RLY
 			BOTH SAEM 1 AN 2
