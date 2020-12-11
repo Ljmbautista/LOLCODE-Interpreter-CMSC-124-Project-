@@ -1,11 +1,12 @@
 BTW SYNTAX CHECKER FOR VAR ASSIGNMENT
 HAI
-  BTW missing operand
   I HAS A var
-  var R  
+
+  R 2				BTW missing varident
+  var R  			BTW missing operand
 
   BTW undeclared varident
-  I HAS A var2
+  BTW I HAS A var2
   var2 R "hello"
 
 KTHXBYE

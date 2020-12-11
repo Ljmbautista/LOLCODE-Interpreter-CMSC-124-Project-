@@ -781,7 +781,7 @@ public class MainStage {
 	
 	//function for var dec/init
 	private void varDecInit(int i, ArrayList<String> lexeme, ArrayList<String> classification, int line_num) {
-		System.out.println("CLASS: "+classification);
+		//System.out.println("CLASS: "+classification);
 		if (classification.size() == 2) {
 			if (classification.get(1).equals("Variable Identifier")) {
 				addLiteralSymbol(lexeme.get(1).toString(),"NOOB");
@@ -898,10 +898,9 @@ public class MainStage {
 			//check if should skip
 			if(i==(index+1)) shouldSkip = false;
 			if(shouldSkip) continue;
-			
+			System.out.println("line: "+ line.toString());
 			//if visible varident
-			if (line_class.get(i).equals("Variable Identifier") || 
-				line_class.get(i).equals("Implicit Variable")) {
+			if (line_class.get(i).equals("Variable Identifier") || line_class.get(i).equals("Implicit Variable")) {
 				//get the value of the varident
 				output += specialCharacterChecker(values.get(identifiers.indexOf(line.get(i))).toString());
 			}
@@ -939,8 +938,6 @@ public class MainStage {
 					}
 					shouldSkip = true;
 				}
-				
-				
 				output += evaluateBoolean(temp,temp_class);
 			}
 			//if comparison expression
@@ -1460,12 +1457,12 @@ public class MainStage {
 			
 			//if there is more than one AN, syntax error
 			if(ANCount >= 2) {
-				displayError(line_num, "Missing operand");
+				displayError(line_num,"Unexpected AN keyword found");
 				return false;
 			}
 			//if there is more than two operand, syntax error
 			if(opCount >= 2 && ANCount == 0) {
-				displayError(line_num, "Missing AN keyword");
+				displayError(line_num,"Unexpected operand found");
 				return false;
 			}
 			
@@ -1824,13 +1821,13 @@ public class MainStage {
 	//function for checking syntax of variable declaration
 	private boolean variableAssignmentSyntaxChecker(ArrayList<String> lexemeLine, ArrayList<String> classificationLine, int line_num) {	
 		
+		if(!identifiers.contains(lexemeLine.get(0))) {		//the variable used must be declared/IT
+			displayError(line_num,"No varident found");
+			return false;									
+		}
 		if(lexemeLine.size() <= 2) {		//the size of the line must at least be 3
 			displayError(line_num,"Missing operand");
 			return false;																			
-		}
-		if(!identifiers.contains(lexemeLine.get(0))) {		//the variable used must be declared/IT
-			displayError(line_num,"Undeclared varident found");
-			return false;									
 		}
 		if(!classificationLine.get(1).equals("Assignment Keyword")) {
 			displayError(line_num,"Invalid syntax for Assignment Operation");
@@ -2180,7 +2177,13 @@ public class MainStage {
 			}
 			//if line has visible
 			else if(line_class.contains("Output Keyword")) {
-				output += printVisible(line,line_class);
+				
+				IT = printVisible(line,line_class);
+				if(IT.contains("NOOB")) {
+					displayError(line_numByLine.get(i),"Can't print 'NOOB'");
+					break;
+				}else output += IT;
+				
 			}
 			//if line has comparison
 			else if(line_class.contains("Comparison Operation Keyword")) {						//check if valid syntax
