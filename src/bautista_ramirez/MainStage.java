@@ -1877,12 +1877,12 @@ public class MainStage {
 		
 		ArrayList<Integer> skip = new ArrayList<>();
 		int h, current=0, innerCount = 0, decrement = 2;
-		boolean inMebbe = false;
+		boolean inMebbe = false, visitedMebbe = false;
 		
+		// if IT is WIN
 		if (IT.equals("WIN")) {
+			// consume lines until NO WAI or OIC is encountered
 			for (h=i+1; h<classification.size(); h++) {
-				System.out.println("Inner: "+innerCount);
-				System.out.println("Lexeem: "+lexeme.get(h));
 				current = h;
 				if (classification.get(h).contains("O RLY Keyword")) innerCount+=2;
 				else if (classification.get(h).contains("NO WAI Keyword")) {
@@ -1891,6 +1891,7 @@ public class MainStage {
 						break;
 					}
 					else {
+						// ignore inner instances of O RLY
 						decrement = 1;
 						innerCount-=decrement;
 					}
@@ -1900,10 +1901,12 @@ public class MainStage {
 						System.out.println("BREAKED");
 						break;
 					}
+					// ignore inner instances of OIC
 					else innerCount-=decrement;
 				}
 			}
 			innerCount = decrement = 0;
+			// skip all lines from NO WAI to OIC
 			for (h=current; h<classification.size(); h++) {
 				if (classification.get(h).contains("O RLY Keyword")) innerCount+=2;
 				else if (classification.get(h).contains("If-Then Delimiter")) {
@@ -1915,37 +1918,40 @@ public class MainStage {
 				}
 				skip.add(h);
 			}
-		} else {
-			for (h=i+1; h<classification.size(); h++) {				
+		} 
+		// if IT is FAIL
+		else {
+			// consume lines until a WIN MEBBE statement
+			for (h=i+1; h<classification.size(); h++) {	
 				if (classification.get(h).contains("O RLY Keyword")) innerCount+=2;
 				else if (classification.get(h).contains("NO WAI Keyword")) {
 					if (innerCount == 0) {
 						inMebbe = false;
-						break;
+						if (!visitedMebbe) break;
 					}
+					// ignores inner instances of O RLY
 					else {
 						decrement-=1;
 						innerCount-=decrement;
 					}
 				}
+				// if MEBBE is encountered
 				else if (classification.get(h).contains("MEBBE Keyword")) {
-					ArrayList<String> l = new ArrayList<String>(); 
-					ArrayList<String> c = new ArrayList<String>(); 					
-					for (String e: lexeme.get(h).subList(1,lexeme.get(h).size())) l.add(e);
-					for (String f: classification.get(h).subList(1,classification.get(h).size())) c.add(f);
-				
-					System.out.println("LIST L"+l);
-					System.out.println("LIST C"+c);
-					
-					String huh = evaluateComparison(l,c); 
-					
-					if (evaluateComparison(l,c).contains("WIN")) {
-						System.out.println("huh: "+huh);
-						inMebbe = true;						
+					if (inMebbe) inMebbe = false;
+					// if WIN MEBBE is encountered for the first time 
+					if (!visitedMebbe) {
+						// set flag inMebbe and visitedMebbe
+						if (evaluateComparison(lexeme.get(h),classification.get(h)).equals("WIN")) {
+							inMebbe = visitedMebbe = true;					
+						}
 					}
+					// skip MEBBE line
+					skip.add(h);
 				}
+				// if OIC is encountered
 				else if (classification.get(h).contains("If-Then Delimiter")) {
 					if (innerCount == 0) break;
+					// ignore inner instances of OIC
 					else innerCount-=decrement;
 				}
 				if (!inMebbe) skip.add(h);
@@ -1960,8 +1966,10 @@ public class MainStage {
 		int h, innerCount = 0;
 		boolean skipFlag = true, enteredFlag = false;
 		for (h=i+1;h<classification.size();h++) {
+			// if OMG is encountered
 			if (classification.get(h).contains("OMG Keyword")) {
-				if (innerCount == 0) {					
+				if (innerCount == 0) {
+					// check if IT matches case, set skipFlag and enteredFlag if WIN
 					if (lexeme.get(h).size() == 2) {					
 						if (lexeme.get(h).get(1).equals(IT)) {
 							skipFlag = false;
@@ -1979,11 +1987,14 @@ public class MainStage {
 			else if (classification.get(h).contains("Switch-Case Delimiter")) innerCount+=1;
 			else if (classification.get(h).contains("If-Then Delimiter")) {
 				if (innerCount == 0) break;
+				// ignore inner instances of WTF?
 				else innerCount-=1;
 			}
+			// if GTFO is encountered, skip succeeding lines until OIC
 			else if (classification.get(h).contains("GTFO Keyword")) {
 				if (innerCount == 0) skipFlag = true;
 			}
+			// if didn't enter any case, execute OMGWTF block
 			else if (classification.get(h).contains("OMGWTF Keyword")) {
 				if (innerCount == 0)
 					if (!enteredFlag) skipFlag = false;
