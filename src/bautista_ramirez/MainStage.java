@@ -1872,58 +1872,60 @@ public class MainStage {
 	}
 	
 	//function for if-else semantics
-	private ArrayList<Integer> evaluateIfElse(String IT, int i, ArrayList<ArrayList<String>> lexeme, ArrayList<ArrayList<String>> classification){
+	private ArrayList<Integer> evaluateIfElse(int i, ArrayList<ArrayList<String>> lexeme, ArrayList<ArrayList<String>> classification){
+		String IT = values.get(identifiers.indexOf("IT"));
+		
 		ArrayList<Integer> skip = new ArrayList<>();
-		int h, current=0, buffer = 0, decrement = 2;
+		int h, current=0, innerCount = 0, decrement = 2;
 		if (IT.equals("WIN")) {
 			for (h=i+1; h<classification.size(); h++) {
-				System.out.println("Buffer: "+buffer);
+				System.out.println("Inner: "+innerCount);
 				System.out.println("Lexeem: "+lexeme.get(h));
 				current = h;
-				if (classification.get(h).contains("O RLY Keyword")) buffer+=2;
+				if (classification.get(h).contains("O RLY Keyword")) innerCount+=2;
 				else if (classification.get(h).contains("NO WAI Keyword")) {
-					if (buffer == 0) {
+					if (innerCount == 0) {
 						System.out.println("BREAKED");
 						break;
 					}
 					else {
 						decrement = 1;
-						buffer-=decrement;
+						innerCount-=decrement;
 					}
 				}
 				else if (classification.get(h).contains("If-Then Delimiter")) {
-					if (buffer == 0) {
+					if (innerCount == 0) {
 						System.out.println("BREAKED");
 						break;
 					}
-					else buffer-=decrement;
+					else innerCount-=decrement;
 				}
 			}
-			buffer = decrement = 0;
+			innerCount = decrement = 0;
 			for (h=current; h<classification.size(); h++) {
-				if (classification.get(h).contains("O RLY Keyword")) buffer+=2;
+				if (classification.get(h).contains("O RLY Keyword")) innerCount+=2;
 				else if (classification.get(h).contains("If-Then Delimiter")) {
-					if (buffer == 0) break;
+					if (innerCount == 0) break;
 					else {
 						decrement = 1;
-						buffer-=decrement;
+						innerCount-=decrement;
 					}		
 				}
 				skip.add(h);
 			}
 		} else {
 			for (h=i+1; h<classification.size(); h++) {				
-				if (classification.get(h).contains("O RLY Keyword")) buffer+=2;
+				if (classification.get(h).contains("O RLY Keyword")) innerCount+=2;
 				else if (classification.get(h).contains("NO WAI Keyword")) {
-					if (buffer == 0) break;
+					if (innerCount == 0) break;
 					else {
 						decrement-=1;
-						buffer-=decrement;
+						innerCount-=decrement;
 					}
 				} 
 				else if (classification.get(h).contains("If-Then Delimiter")) {
-					if (buffer == 0) break;
-					else buffer-=decrement;
+					if (innerCount == 0) break;
+					else innerCount-=decrement;
 				}
 				skip.add(h);
 			}
@@ -1933,33 +1935,37 @@ public class MainStage {
 	
 	//function for switch case semantics
 	private ArrayList<Integer> evaluateSwitch(String IT, int i, ArrayList<ArrayList<String>> lexeme, ArrayList<ArrayList<String>> classification) {
-		System.out.println("I GOT IN.");
 		ArrayList<Integer> skip = new ArrayList<>();
-		int h, buffer = 0;
+		int h, innerCount = 0;
 		boolean skipFlag = true, enteredFlag = false;
 		for (h=i+1;h<classification.size();h++) {
 			if (classification.get(h).contains("OMG Keyword")) {
-				if (lexeme.get(h).size() == 2) {					
-					if (lexeme.get(h).get(1).equals(IT)) {
-						skipFlag = false;
-						enteredFlag = true;
+				if (innerCount == 0) {					
+					if (lexeme.get(h).size() == 2) {					
+						if (lexeme.get(h).get(1).equals(IT)) {
+							skipFlag = false;
+							enteredFlag = true;
+						}
 					}
-				}
-				else if (lexeme.get(h).size() == 4) {
-					if (lexeme.get(h).get(2).equals(IT)) {
-						skipFlag = false;
-						enteredFlag = true;
+					else if (lexeme.get(h).size() == 4) {
+						if (lexeme.get(h).get(2).equals(IT)) {
+							skipFlag = false;
+							enteredFlag = true;
+						}
 					}
 				}
 			}
-			else if (classification.get(h).contains("Switch-Case Delimiter")) buffer+=1;
+			else if (classification.get(h).contains("Switch-Case Delimiter")) innerCount+=1;
 			else if (classification.get(h).contains("If-Then Delimiter")) {
-				if (buffer == 0) break;
-				else buffer-=1;
+				if (innerCount == 0) break;
+				else innerCount-=1;
 			}
-			else if (classification.get(h).contains("GTFO Keyword")) skipFlag = true;
+			else if (classification.get(h).contains("GTFO Keyword")) {
+				if (innerCount == 0) skipFlag = true;
+			}
 			else if (classification.get(h).contains("OMGWTF Keyword")) {
-				if (!enteredFlag) skipFlag = false;
+				if (innerCount == 0)
+					if (!enteredFlag) skipFlag = false;
 			}
 			else if (skipFlag) skip.add(h);
 		}		
@@ -1999,21 +2005,21 @@ public class MainStage {
 	
 	private boolean IfElseSyntaxChecker(int i, ArrayList<ArrayList<String>> lexeme, ArrayList<ArrayList<String>> classification) {
 		boolean unclosed = true;
-		int buffer = 0;
+		int innerCount = 0;
 		
 		for (int j=i+1; j<lexeme.size(); j++) {
 			if (classification.get(j).contains("O RLY Keyword")) {
 				System.out.println("Encountered an O RLY");
-				buffer+=1;
+				innerCount+=1;
 			}
 			else if (classification.get(j).contains("If-Then Delimiter")) {
-				if (buffer == 0) {
+				if (innerCount == 0) {
 					unclosed = false;
 					break;
 				}
 				else {
 					System.out.println("Encountered an OIC");
-					buffer-=1;
+					innerCount-=1;
 				}
 			}
 		}
@@ -2030,25 +2036,27 @@ public class MainStage {
 	
 	private boolean SwitchSyntaxChecker(int i, ArrayList<ArrayList<String>> lexeme, ArrayList<ArrayList<String>> classification) {
 		boolean unclosed = true, noLiteral = false;
-		int buffer = 0;
+		int innerCount = 0;
 		
 		for (int j=i+1; j<lexeme.size(); j++) {
 			if (classification.get(j).contains("Switch-Case Delimiter")) {
 				System.out.println("Encountered a WTF");
-				buffer+=1;
+				innerCount+=1;
 			}
-			else if (classification.get(j).contains("If-Then Delimiter")) {
+			else if (classification.get(j).contains(("OMG Keyword"))) {
 				if (classification.get(j).size() == 1) {
 					displayError(line_numByLine.get(j),"No case literal");
 					noLiteral = true;
 				}
-				if (buffer == 0) {
+			}
+			else if (classification.get(j).contains("If-Then Delimiter")) {
+				if (innerCount == 0) {
 					unclosed = false;
 					break;
 				}
 				else {
 					System.out.println("Encountered an OIC");
-					buffer-=1;
+					innerCount-=1;
 				}
 			}
 		}
@@ -2059,7 +2067,6 @@ public class MainStage {
 			displayError(line_numByLine.get(i),"WTF? not closed");
 			return false;
 		}
-		
 		return true;
 	}
 	
@@ -2206,7 +2213,7 @@ public class MainStage {
 			//if line has if-else
 			else if(line_class.contains("O RLY Keyword")) {
 				if (IfElseSyntaxChecker(i,lexemesByLine,classificationByLine)) {					
-					newSkips = evaluateIfElse(IT,i,lexemesByLine,classificationByLine);
+					newSkips = evaluateIfElse(i,lexemesByLine,classificationByLine);
 					newSkips.forEach(skipList::add);
 				} else break;
 			}
