@@ -1877,6 +1877,8 @@ public class MainStage {
 		
 		ArrayList<Integer> skip = new ArrayList<>();
 		int h, current=0, innerCount = 0, decrement = 2;
+		boolean inMebbe = false;
+		
 		if (IT.equals("WIN")) {
 			for (h=i+1; h<classification.size(); h++) {
 				System.out.println("Inner: "+innerCount);
@@ -1917,17 +1919,36 @@ public class MainStage {
 			for (h=i+1; h<classification.size(); h++) {				
 				if (classification.get(h).contains("O RLY Keyword")) innerCount+=2;
 				else if (classification.get(h).contains("NO WAI Keyword")) {
-					if (innerCount == 0) break;
+					if (innerCount == 0) {
+						inMebbe = false;
+						break;
+					}
 					else {
 						decrement-=1;
 						innerCount-=decrement;
 					}
-				} 
+				}
+				else if (classification.get(h).contains("MEBBE Keyword")) {
+					ArrayList<String> l = new ArrayList<String>(); 
+					ArrayList<String> c = new ArrayList<String>(); 					
+					for (String e: lexeme.get(h).subList(1,lexeme.get(h).size())) l.add(e);
+					for (String f: classification.get(h).subList(1,classification.get(h).size())) c.add(f);
+				
+					System.out.println("LIST L"+l);
+					System.out.println("LIST C"+c);
+					
+					String huh = evaluateComparison(l,c); 
+					
+					if (evaluateComparison(l,c).contains("WIN")) {
+						System.out.println("huh: "+huh);
+						inMebbe = true;						
+					}
+				}
 				else if (classification.get(h).contains("If-Then Delimiter")) {
 					if (innerCount == 0) break;
 					else innerCount-=decrement;
 				}
-				skip.add(h);
+				if (!inMebbe) skip.add(h);
 			}
 		}
 		return skip;
